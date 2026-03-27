@@ -5,7 +5,7 @@ const connectionString = process.env.DATABASE_URL || 'postgresql://postgres.unfj
 
 const pool = new Pool({
     connectionString: connectionString,
-    ssl: {
+    ssl: connectionString.includes('localhost') ? false : {
         rejectUnauthorized: false
     }
 });
