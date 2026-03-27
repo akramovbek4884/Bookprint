@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bookprint — POS Tizimi</title>
+  <meta name="description"
+    content="Bookprint uchun zamonaviy savdo nuqtasi tizimi. Shtrix-kod orqali sotish, kunlik va oylik hisobotlar." />
+  <meta name="theme-color" content="#0a0e1a" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <div id="app">
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <button id="hamburger" class="hamburger" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="mobile-logo">
+        <img src="/src/assets/logo.png" alt="Bookprint Logo" class="logo-img-small" />
+        <span>Bookprint</span>
+      </div>
+      <div style="width: 40px;"></div> <!-- Spacer -->
+    </header>
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-logo">
+        <img src="/src/assets/logo.png" alt="Bookprint Logo" class="logo-img" />
+        <h1 class="logo-text">Bookprint</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#/" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Bosh sahifa</span>
+        </a>
+        <a href="#/sell" class="nav-item" data-page="sell" id="nav-sell">
+          <span class="nav-icon">🛒</span>
+          <span class="nav-label">Sotish</span>
+        </a>
+        <a href="#/products" class="nav-item" data-page="products" id="nav-products">
+          <span class="nav-icon">📦</span>
+          <span class="nav-label">Mahsulotlar</span>
+        </a>
+        <a href="#/daily" class="nav-item" data-page="daily" id="nav-daily">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Kunlik hisobot</span>
+        </a>
+        <a href="#/monthly" class="nav-item" data-page="monthly" id="nav-monthly">
+          <span class="nav-icon">📈</span>
+          <span class="nav-label">Oylik hisobot</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="clock" id="sidebar-clock"></div>
+        <div class="sidebar-version">v1.0.0</div>
+      </div>
+    </aside>
+    <main id="main-content" class="main-content">
+      <!-- Pages rendered here -->
+    </main>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div id="receipt-modal" class="modal-overlay hidden">
+    <div class="modal-content receipt-modal-content">
+      <div id="receipt-content"></div>
+      <div class="receipt-actions">
+        <button id="receipt-print-btn" class="btn btn-primary">🖨️ Chop etish</button>
+        <button id="receipt-close-btn" class="btn btn-secondary">✖ Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
