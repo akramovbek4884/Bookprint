@@ -1,4 +1,7 @@
 import 'dotenv/config';
+if (process.env.NODE_ENV !== 'production') {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 import pkg from 'pg';
 const { Pool } = pkg;
 
@@ -11,7 +14,7 @@ if (!connectionString) {
 
 const pool = new Pool({
     connectionString: connectionString,
-    ssl: connectionString.includes('localhost') ? false : {
+    ssl: {
         rejectUnauthorized: false
     }
 });
