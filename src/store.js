@@ -24,6 +24,14 @@ export async function initStore() {
             fetch(`${API_URL}/sales`, { headers })
         ]);
 
+        // Agar token yaroqsiz yoki muddati o'tgan bo'lsa — login sahifasiga qaytarish
+        if (prodRes.status === 401 || prodRes.status === 403 || salesRes.status === 401 || salesRes.status === 403) {
+            console.error("Autentifikatsiya xatosi — token yaroqsiz yoki muddati o'tgan");
+            localStorage.removeItem('kmarket_token');
+            localStorage.removeItem('kmarket_user');
+            return false;
+        }
+
         if (prodRes.ok && salesRes.ok) {
             memoryProducts = await prodRes.json();
             memorySales = await salesRes.json();
@@ -36,11 +44,14 @@ export async function initStore() {
             });
             isInitialized = true;
             console.log("Memory Store synced with Backend");
+            return true;
         } else {
             console.error("Backend qaytargan xato:", await prodRes.text(), await salesRes.text());
+            return false;
         }
     } catch (err) {
-        console.error("Backend bilan ulanishda xato. Lokal rejim ishga tushirildi:", err);
+        console.error("Backend bilan ulanishda xato:", err);
+        return false;
     }
 }
 

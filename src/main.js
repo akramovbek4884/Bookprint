@@ -51,11 +51,18 @@ function navigateTo(path) {
 }
 
 // Initialize store and then render
-initStore().then(() => {
+initStore().then((success) => {
   // Listen for hash changes
   window.addEventListener('hashchange', () => {
     navigateTo(getRoute());
   });
+
+  // Agar store yuklash muvaffaqiyatsiz bo'lsa — login sahifasiga yo'naltirish
+  if (!success && getRoute() !== '/login') {
+    localStorage.removeItem('kmarket_token');
+    localStorage.removeItem('kmarket_user');
+    window.location.hash = '/login';
+  }
 
   // Final load
   navigateTo(getRoute());

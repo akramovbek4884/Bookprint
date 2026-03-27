@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"node server/index.cjs\"",
+    "dev": "concurrently \"vite\" \"node api/index.js\"",
     "build": "vite build",
-    "start": "node server/index.cjs",
+    "start": "node api/index.js",
     "preview": "vite preview"
   },
   "devDependencies": {
