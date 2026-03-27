@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"node server/index.cjs\"",
     "build": "vite build",
+    "start": "node server/index.cjs",
     "preview": "vite preview"
   },
   "devDependencies": {
@@ -20,6 +21,6 @@
     "express": "^5.2.1",
     "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.3",
-    "sqlite3": "^6.0.1"
+    "pg": "^8.13.1"
   }
 }

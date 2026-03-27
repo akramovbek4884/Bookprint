@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./db.cjs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,11 +13,59 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'bookprint_super_secret_key_123'; // In production, use process.env
 
+async function initDb() {
+    try {
+        await db.query(`CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'cashier'
+        )`);
+        await db.query(`CREATE TABLE IF NOT EXISTS products (
+            id SERIAL PRIMARY KEY,
+            barcode TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            price INTEGER NOT NULL,
+            cost_price INTEGER DEFAULT 0,
+            stock INTEGER NOT NULL,
+            category TEXT
+        )`);
+        await db.query(`CREATE TABLE IF NOT EXISTS sales (
+            id SERIAL PRIMARY KEY,
+            receiptNo TEXT UNIQUE NOT NULL,
+            total INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            user_id INTEGER REFERENCES users(id)
+        )`);
+        await db.query(`CREATE TABLE IF NOT EXISTS sale_items (
+            id SERIAL PRIMARY KEY,
+            sale_id INTEGER REFERENCES sales(id),
+            product_id INTEGER REFERENCES products(id),
+            qty INTEGER NOT NULL,
+            price INTEGER NOT NULL,
+            subtotal INTEGER NOT NULL
+        )`);
+
+        // Default admin
+        const adminCheck = await db.query('SELECT id FROM users WHERE username = $1', ['admin']);
+        if (adminCheck.rowCount === 0) {
+            const hash = bcrypt.hashSync('admin123', 8);
+            await db.query('INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3)', ['admin', hash, 'admin']);
+        }
+        console.log('Database tables verified/created.');
+    } catch (err) {
+        console.error('Database initialization error:', err);
+    }
+}
+initDb();
+
 // --- AUTH API ---
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+        const user = result.rows[0];
+
         if (!user) return res.status(401).json({ error: 'Foydalanuvchi topilmadi' });
 
         if (bcrypt.compareSync(password, user.password_hash)) {
@@ -25,7 +74,9 @@ app.post('/api/auth/login', (req, res) => {
         } else {
             res.status(401).json({ error: 'Parol noto\'g\'ri' });
         }
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Middleware to protect routes
@@ -44,91 +95,109 @@ function authenticate(req, res, next) {
 // --- PRODUCTS API ---
 
 // Get all products
-app.get('/api/products', (req, res) => {
-    db.all('SELECT * FROM products', [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
+app.get('/api/products', async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM products ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Add a product
-app.post('/api/products', (req, res) => {
+app.post('/api/products', async (req, res) => {
     const { barcode, name, price, cost_price, stock, category } = req.body;
     if (!barcode || !name || price == null || stock == null) {
         return res.status(400).json({ error: 'Barcha maydonlar to\'ldirilishi shart' });
     }
 
-    const sql = 'INSERT INTO products (barcode, name, price, cost_price, stock, category) VALUES (?, ?, ?, ?, ?, ?)';
-    db.run(sql, [barcode, name, price, cost_price || 0, stock, category || 'Unclassified'], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, barcode, name, price, cost_price, stock, category });
-    });
+    try {
+        const sql = 'INSERT INTO products (barcode, name, price, cost_price, stock, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id';
+        const result = await db.query(sql, [barcode, name, price, cost_price || 0, stock, category || 'Unclassified']);
+        res.json({ id: result.rows[0].id, barcode, name, price, cost_price, stock, category });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Update a product
-app.put('/api/products/:id', (req, res) => {
+app.put('/api/products/:id', async (req, res) => {
     const { id } = req.params;
     const { barcode, name, price, cost_price, stock, category } = req.body;
 
-    const sql = 'UPDATE products SET barcode = ?, name = ?, price = ?, cost_price = ?, stock = ?, category = ? WHERE id = ?';
-    db.run(sql, [barcode, name, price, cost_price || 0, stock, category, id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const sql = 'UPDATE products SET barcode = $1, name = $2, price = $3, cost_price = $4, stock = $5, category = $6 WHERE id = $7';
+        await db.query(sql, [barcode, name, price, cost_price || 0, stock, category, id]);
         res.json({ id, barcode, name, price, cost_price, stock, category });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Delete a product
-app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', async (req, res) => {
     const { id } = req.params;
-    db.run('DELETE FROM products WHERE id = ?', [id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Deleted', changes: this.changes });
-    });
+    try {
+        await db.query('DELETE FROM products WHERE id = $1', [id]);
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // --- SALES API ---
 
 // Add a new sale
-app.post('/api/sales', (req, res) => {
+app.post('/api/sales', async (req, res) => {
     const { receiptNo, total, items, user_id } = req.body;
     const date = new Date().toISOString();
 
-    db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
 
-        const stmt = 'INSERT INTO sales (receiptNo, total, date, user_id) VALUES (?, ?, ?, ?)';
-        db.run(stmt, [receiptNo, total, date, user_id || null], function (err) {
-            if (err) {
-                db.run('ROLLBACK');
-                return res.status(500).json({ error: err.message });
-            }
+        const saleResult = await client.query(
+            'INSERT INTO sales (receiptNo, total, date, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
+            [receiptNo, total, date, user_id || null]
+        );
+        const saleId = saleResult.rows[0].id;
 
-            const saleId = this.lastID;
-            const itemStmt = db.prepare('INSERT INTO sale_items (sale_id, product_id, qty, price, subtotal) VALUES (?, ?, ?, ?, ?)');
-            const stockStmt = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
+        for (const item of items) {
+            await client.query(
+                'INSERT INTO sale_items (sale_id, product_id, qty, price, subtotal) VALUES ($1, $2, $3, $4, $5)',
+                [saleId, item.id, item.qty, item.price, item.subtotal]
+            );
+            await client.query(
+                'UPDATE products SET stock = stock - $1 WHERE id = $2',
+                [item.qty, item.id]
+            );
+        }
 
-            items.forEach(item => {
-                itemStmt.run([saleId, item.id, item.qty, item.price, item.subtotal]);
-                stockStmt.run([item.qty, item.id]);
-            });
-
-            itemStmt.finalize();
-            stockStmt.finalize();
-
-            db.run('COMMIT', (err) => {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ success: true, saleId });
-            });
-        });
-    });
+        await client.query('COMMIT');
+        res.json({ success: true, saleId });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
 });
 
 // Get all sales (simplified for reporting)
-app.get('/api/sales', (req, res) => {
-    db.all('SELECT * FROM sales ORDER BY date DESC', [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
+app.get('/api/sales', async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM sales ORDER BY date DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// Serve static files from the dist directory
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Send index.html for any other requests (SPA support)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(PORT, () => {

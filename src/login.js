@@ -1,5 +1,5 @@
 export function renderLogin() {
-    return `
+  return `
     <div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
       <div class="card card-glass" style="width: 100%; max-width: 400px; padding: var(--space-xl);">
         <div style="text-align: center; margin-bottom: var(--space-xl);">
@@ -28,48 +28,48 @@ export function renderLogin() {
 }
 
 export function initLogin() {
-    const form = document.getElementById('login-form');
-    const errorDiv = document.getElementById('login-error');
+  const form = document.getElementById('login-form');
+  const errorDiv = document.getElementById('login-error');
 
-    // Hide sidebar if on login page
-    const sidebar = document.getElementById('sidebar');
-    const mobileHeader = document.querySelector('.mobile-header');
-    if (sidebar) sidebar.style.display = 'none';
-    if (mobileHeader) mobileHeader.style.display = 'none';
+  // Hide sidebar if on login page
+  const sidebar = document.getElementById('sidebar');
+  const mobileHeader = document.querySelector('.mobile-header');
+  if (sidebar) sidebar.style.display = 'none';
+  if (mobileHeader) mobileHeader.style.display = 'none';
 
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
 
-            try {
-                const res = await fetch('http://localhost:3000/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    localStorage.setItem('kmarket_token', data.token);
-                    localStorage.setItem('kmarket_user', JSON.stringify(data.user));
-
-                    // Restore layout
-                    if (sidebar) sidebar.style.display = 'flex';
-                    if (mobileHeader) mobileHeader.style.display = 'flex';
-
-                    window.location.hash = '/';
-                    window.location.reload(); // Reload to initialize store with token
-                } else {
-                    errorDiv.textContent = data.error || 'Kirishda xatolik';
-                    errorDiv.style.display = 'block';
-                }
-            } catch (err) {
-                errorDiv.textContent = "Serverga ulanib bo'lmayapti";
-                errorDiv.style.display = 'block';
-            }
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
         });
-    }
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('kmarket_token', data.token);
+          localStorage.setItem('kmarket_user', JSON.stringify(data.user));
+
+          // Restore layout
+          if (sidebar) sidebar.style.display = 'flex';
+          if (mobileHeader) mobileHeader.style.display = 'flex';
+
+          window.location.hash = '/';
+          window.location.reload(); // Reload to initialize store with token
+        } else {
+          errorDiv.textContent = data.error || 'Kirishda xatolik';
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.textContent = "Serverga ulanib bo'lmayapti";
+        errorDiv.style.display = 'block';
+      }
+    });
+  }
 }
