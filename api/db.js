@@ -1,7 +1,5 @@
 import 'dotenv/config';
-if (process.env.NODE_ENV !== 'production') {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 import pkg from 'pg';
 const { Pool } = pkg;
 
