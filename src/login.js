@@ -1,26 +1,27 @@
 export function renderLogin() {
   return `
-    <div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
-      <div class="card card-glass" style="width: 100%; max-width: 400px; padding: var(--space-xl);">
-        <div style="text-align: center; margin-bottom: var(--space-xl);">
-          <img src="/src/assets/logo.png" alt="Bookprint Logo" class="logo-img" style="width: 64px; height: 64px; margin-bottom: var(--space-sm);" />
-          <h2 class="page-title">Tizimga kirish</h2>
-          <p class="page-subtitle">Iltimos, o'z hisob ma'lumotlaringizni kiriting</p>
+    <div class="login-screen">
+      <div class="mesh-gradient"></div>
+      <div class="card card-glass login-card">
+        <div class="login-logo">
+          <img src="/src/assets/logo.png" alt="Bookprint Logo" class="logo-img" />
+          <h2 class="login-title">Tizimga kirish</h2>
+          <p class="login-subtitle">Xush kelibsiz! Iltimos, ma'lumotlaringizni kiriting</p>
         </div>
         
         <form id="login-form">
-          <div class="input-group full-width" style="margin-bottom: var(--space-md);">
-            <label for="login-username">Foydalanuvchi nomi</label>
-            <input type="text" id="login-username" class="input" placeholder="admin" required />
+          <div class="input-group">
+            <label for="login-username" style="color: #ccc;">Foydalanuvchi nomi</label>
+            <input type="text" id="login-username" class="input input-glass" placeholder="admin" required />
           </div>
-          <div class="input-group full-width" style="margin-bottom: var(--space-lg);">
-            <label for="login-password">Parol</label>
-            <input type="password" id="login-password" class="input" placeholder="••••••••" required />
+          <div class="input-group">
+            <label for="login-password" style="color: #ccc;">Parol</label>
+            <input type="password" id="login-password" class="input input-glass" placeholder="••••••••" required />
           </div>
           
-          <div id="login-error" style="color: var(--accent-danger); font-size: 0.85rem; margin-bottom: var(--space-md); text-align: center; display: none;"></div>
+          <div id="login-error" style="color: #ff5252; font-size: 0.85rem; margin-bottom: var(--space-md); text-align: center; border: 1px solid rgba(255,82,82,0.3); padding: var(--space-sm); border-radius: var(--radius-sm); background: rgba(255,82,82,0.1); display: none;"></div>
           
-          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Kirish</button>
+          <button type="submit" class="btn btn-primary btn-premium" style="width: 100%;">Kirish</button>
         </form>
       </div>
     </div>

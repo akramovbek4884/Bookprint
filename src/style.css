@@ -60,6 +60,12 @@
   /* Layout */
   --sidebar-width: 260px;
   --sidebar-collapsed: 72px;
+
+  /* Login Specific */
+  --login-bg-1: #0f172a;
+  --login-bg-2: #1e1b4b;
+  --login-accent-1: #7f1d1d;
+  --login-accent-2: #450a0a;
 }
 
 /* ========================================
@@ -285,9 +291,121 @@ body {
 }
 
 .card-glass {
-  background: rgba(26, 34, 53, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.82);
+}
+
+/* ========================================
+   Login Screen Enhanced
+   ======================================== */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  overflow: hidden;
+  background: var(--login-bg-1);
+}
+
+.mesh-gradient {
+  position: absolute;
+  inset: 0;
+  background-color: var(--login-bg-1);
+  background-image: 
+    radial-gradient(at 0% 0%, var(--login-bg-2) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, var(--login-accent-1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, var(--login-bg-2) 0, transparent 50%), 
+    radial-gradient(at 0% 50%, var(--login-accent-2) 0, transparent 50%), 
+    radial-gradient(at 100% 50%, var(--login-accent-1) 0, transparent 50%), 
+    radial-gradient(at 0% 100%, var(--login-bg-2) 0, transparent 50%), 
+    radial-gradient(at 50% 100%, var(--login-accent-2) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, var(--login-bg-2) 0, transparent 50%);
+  filter: blur(40px);
+  opacity: 0.6;
+  animation: mesh-fade 10s ease-in-out infinite alternate;
+}
+
+@keyframes mesh-fade {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-2xl);
+  border-radius: var(--radius-xl);
+  position: relative;
+  z-index: 10;
+  animation: login-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  color: white;
+}
+
+@keyframes login-appear {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.login-logo .logo-img {
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--space-md);
+  filter: drop-shadow(0 0 15px var(--accent-primary-glow));
+}
+
+.login-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: var(--space-xs);
+  background: linear-gradient(to bottom, #fff, #999);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-subtitle {
+  color: #a0a0a0;
+  font-size: 0.95rem;
+}
+
+.input-glass {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  padding: var(--space-md) !important;
+  margin-bottom: var(--space-md);
+}
+
+.input-glass:focus {
+  border-color: var(--accent-primary) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.15) !important;
+}
+
+.btn-premium {
+  background: linear-gradient(135deg, var(--accent-primary), #8e1c1c);
+  padding: var(--space-md) !important;
+  font-size: 1.1rem !important;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(211, 47, 47, 0.4);
+  margin-top: var(--space-md);
+}
+
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(211, 47, 47, 0.6);
+  filter: brightness(1.1);
 }
 
 /* Stat Cards */
