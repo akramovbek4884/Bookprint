@@ -186,11 +186,20 @@ app.post('/api/sales', async (req, res) => {
     }
 });
 
-// Get all sales (simplified for reporting)
+// Get all sales (with items)
 app.get('/api/sales', async (req, res) => {
     try {
-        const result = await db.query('SELECT * FROM sales ORDER BY date DESC');
-        res.json(result.rows);
+        const salesResult = await db.query('SELECT * FROM sales ORDER BY id DESC');
+        const itemsResult = await db.query('SELECT * FROM sale_items');
+
+        const sales = salesResult.rows.map(sale => {
+            return {
+                ...sale,
+                items: itemsResult.rows.filter(item => item.sale_id === sale.id)
+            };
+        });
+
+        res.json(sales);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

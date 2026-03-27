@@ -32,6 +32,7 @@ export async function initStore() {
                 if (typeof s.items === 'string') {
                     try { s.items = JSON.parse(s.items); } catch (e) { s.items = []; }
                 }
+                if (!Array.isArray(s.items)) s.items = [];
             });
             isInitialized = true;
             console.log("Memory Store synced with Backend");
