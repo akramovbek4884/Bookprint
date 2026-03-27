@@ -356,7 +356,7 @@ export function initSell() {
   // Pay button
   const payBtn = document.getElementById('pay-btn');
   if (payBtn) {
-    payBtn.addEventListener('click', () => {
+    payBtn.addEventListener('click', async () => {
       if (cart.length === 0) return;
 
       // Final stock check before saving
@@ -369,6 +369,10 @@ export function initSell() {
         }
       }
 
+      const originalText = payBtn.textContent;
+      payBtn.disabled = true;
+      payBtn.textContent = '⌛ Saqlanmoqda...';
+
       const sale = {
         items: cart.map(item => ({
           barcode: item.barcode,
@@ -380,32 +384,42 @@ export function initSell() {
         total: getCartTotal(),
       };
 
-      const savedSale = saveSale(sale);
-      showReceipt(savedSale);
-      cart = [];
-      updateCartUI();
+      const result = await saveSale(sale);
 
-      // Re-render product list to reflect new stock
-      const productList = document.getElementById('product-list');
-      if (productList) {
-        const updatedProducts = getProducts();
-        productList.innerHTML = updatedProducts.map(p => {
-          const isLow = p.stock < 10;
-          const isOut = p.stock <= 0;
-          return `
-                        <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-barcode="${p.barcode}">
-                            <div class="pq-name">${p.name}</div>
-                            <div class="pq-price">${formatPrice(p.price)}</div>
-                            <div class="pq-stock ${isLow ? 'low' : ''}">${p.stock} ta</div>
-                            <div class="pq-code">${p.barcode}</div>
-                        </div>
-                    `;
-        }).join('');
+      payBtn.disabled = false;
+      payBtn.textContent = originalText;
 
-        // Re-attach card listeners
-        attachQuickCardListeners();
+      if (result.success) {
+        showReceipt(result.sale);
+        cart = [];
+        updateCartUI();
+
+        // Refresh local product list UI from the now-synced store
+        refreshProductListUI();
+      } else {
+        alert('Xatolik: ' + result.error);
       }
     });
+  }
+
+  function refreshProductListUI() {
+    const productList = document.getElementById('product-list');
+    if (productList) {
+      const updatedProducts = getProducts();
+      productList.innerHTML = updatedProducts.map(p => {
+        const isLow = p.stock < 10;
+        const isOut = p.stock <= 0;
+        return `
+          <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-barcode="${p.barcode}">
+            <div class="pq-name">${p.name}</div>
+            <div class="pq-price">${formatPrice(p.price)}</div>
+            <div class="pq-stock ${isLow ? 'low' : ''}">${p.stock} ta</div>
+            <div class="pq-code">${p.barcode}</div>
+          </div>
+        `;
+      }).join('');
+      attachQuickCardListeners();
+    }
   }
 
   // Clear cart

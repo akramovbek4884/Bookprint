@@ -245,7 +245,7 @@ export function initProducts() {
   });
 
   // Save
-  document.getElementById('pf-save')?.addEventListener('click', () => {
+  document.getElementById('pf-save')?.addEventListener('click', async () => {
     const barcode = document.getElementById('pf-barcode').value.trim();
     const name = document.getElementById('pf-name').value.trim();
     const cost_price = parseInt(document.getElementById('pf-cost-price').value) || 0;
@@ -258,14 +258,28 @@ export function initProducts() {
       return;
     }
 
+    const saveBtn = document.getElementById('pf-save');
+    const originalText = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = '⌛ Saqlanmoqda...';
+
+    let result;
     if (editingBarcode) {
-      updateProduct(editingBarcode, { name, price, cost_price, stock, category });
+      const product = getProducts().find(p => p.barcode === editingBarcode);
+      result = await updateProduct(product?.id, { barcode, name, price, cost_price, stock, category });
     } else {
-      addProduct({ barcode, name, price, cost_price, stock, category });
+      result = await addProduct({ barcode, name, price, cost_price, stock, category });
     }
 
-    modal.classList.add('hidden');
-    refreshProductTable();
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalText;
+
+    if (result.success) {
+      modal.classList.add('hidden');
+      refreshProductTable();
+    } else {
+      alert('Xatolik: ' + result.error);
+    }
   });
 
   // Close modals on overlay click
@@ -276,20 +290,32 @@ export function initProducts() {
   });
 
   // Custom Delete Confirmation Logic
-  let deleteTargetBarcode = null;
+  let deleteTargetId = null;
   const deleteModal = document.getElementById('delete-confirm-modal');
 
   document.getElementById('delete-cancel')?.addEventListener('click', () => {
     deleteModal.classList.add('hidden');
-    deleteTargetBarcode = null;
+    deleteTargetId = null;
   });
 
-  document.getElementById('delete-confirm')?.addEventListener('click', () => {
-    if (deleteTargetBarcode) {
-      deleteProduct(deleteTargetBarcode);
-      deleteModal.classList.add('hidden');
-      deleteTargetBarcode = null;
-      refreshProductTable();
+  document.getElementById('delete-confirm')?.addEventListener('click', async () => {
+    if (deleteTargetId) {
+      const confirmBtn = document.getElementById('delete-confirm');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '⌛ O\'chirilmoqda...';
+
+      const result = await deleteProduct(deleteTargetId);
+
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '🗑️ O\'chirish';
+
+      if (result.success) {
+        deleteModal.classList.add('hidden');
+        deleteTargetId = null;
+        refreshProductTable();
+      } else {
+        alert('Xatolik: ' + result.error);
+      }
     }
   });
 
@@ -308,7 +334,7 @@ export function initProducts() {
         const barcodeInput = document.getElementById('pf-barcode');
         if (barcodeInput) {
           barcodeInput.value = product.barcode;
-          barcodeInput.disabled = true;
+          barcodeInput.disabled = false; // Allow changing barcode too if needed, though backend handles it
         }
         document.getElementById('pf-name').value = product.name;
         document.getElementById('pf-cost-price').value = product.cost_price || '';
@@ -321,8 +347,12 @@ export function initProducts() {
 
     document.querySelectorAll('.delete-product-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        deleteTargetBarcode = btn.dataset.barcode;
-        deleteModal.classList.remove('hidden');
+        const barcode = btn.dataset.barcode;
+        const product = getProducts().find(p => p.barcode === barcode);
+        if (product) {
+          deleteTargetId = product.id;
+          deleteModal.classList.remove('hidden');
+        }
       });
     });
   }
