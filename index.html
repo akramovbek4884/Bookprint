@@ -41,7 +41,7 @@
         <img src="/src/assets/logo.png" alt="Bookprint Logo" class="logo-img" />
         <h1 class="logo-text">Bookprint</h1>
       </div>
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" id="sidebar-nav">
         <a href="#/" class="nav-item active" data-page="dashboard" id="nav-dashboard">
           <span class="nav-icon">📊</span>
           <span class="nav-label">Bosh sahifa</span>
@@ -54,18 +54,23 @@
           <span class="nav-icon">📦</span>
           <span class="nav-label">Mahsulotlar</span>
         </a>
-        <a href="#/daily" class="nav-item" data-page="daily" id="nav-daily">
+        <a href="#/daily" class="nav-item admin-only" data-page="daily" id="nav-daily">
           <span class="nav-icon">📅</span>
           <span class="nav-label">Kunlik hisobot</span>
         </a>
-        <a href="#/monthly" class="nav-item" data-page="monthly" id="nav-monthly">
+        <a href="#/monthly" class="nav-item admin-only" data-page="monthly" id="nav-monthly">
           <span class="nav-icon">📈</span>
           <span class="nav-label">Oylik hisobot</span>
+        </a>
+        <a href="#/users" class="nav-item admin-only" data-page="users" id="nav-users">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">Foydalanuvchilar</span>
         </a>
       </nav>
       <div class="sidebar-footer">
         <div class="clock" id="sidebar-clock"></div>
-        <div class="sidebar-version">v1.0.0</div>
+        <button id="logout-btn" class="btn btn-secondary" style="width: 100%; margin-top: 8px; font-size: 0.8rem; padding: 8px;">🚪 Chiqish</button>
+        <div class="sidebar-version">v1.1.0</div>
       </div>
     </aside>
     <main id="main-content" class="main-content">

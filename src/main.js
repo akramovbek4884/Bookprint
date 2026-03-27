@@ -9,6 +9,7 @@ import { renderProducts, initProducts } from './products.js';
 import { renderDaily, initDaily } from './daily.js';
 import { renderMonthly, initMonthly } from './monthly.js';
 import { renderLogin, initLogin } from './login.js';
+import { renderUsers, initUsers } from './users.js';
 import { initRobot } from './robot.js';
 
 // ---- Router ----
@@ -16,14 +17,32 @@ const routes = {
   '/': { render: renderDashboard, init: null, navId: 'nav-dashboard' },
   '/sell': { render: renderSell, init: initSell, navId: 'nav-sell' },
   '/products': { render: renderProducts, init: initProducts, navId: 'nav-products' },
-  '/daily': { render: renderDaily, init: initDaily, navId: 'nav-daily' },
-  '/monthly': { render: renderMonthly, init: initMonthly, navId: 'nav-monthly' },
+  '/daily': { render: renderDaily, init: initDaily, navId: 'nav-daily', adminOnly: true },
+  '/monthly': { render: renderMonthly, init: initMonthly, navId: 'nav-monthly', adminOnly: true },
+  '/users': { render: renderUsers, init: initUsers, navId: 'nav-users', adminOnly: true },
   '/login': { render: renderLogin, init: initLogin, navId: null },
 };
 
 function getRoute() {
   const hash = window.location.hash.slice(1) || '/';
   return hash;
+}
+
+function getCurrentUser() {
+  const userStr = localStorage.getItem('kmarket_user');
+  return userStr ? JSON.parse(userStr) : null;
+}
+
+function isAdmin() {
+  const user = getCurrentUser();
+  return user && user.role === 'admin';
+}
+
+function updateSidebarVisibility() {
+  const admin = isAdmin();
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = admin ? '' : 'none';
+  });
 }
 
 function navigateTo(path) {
@@ -34,6 +53,13 @@ function navigateTo(path) {
   }
 
   const route = routes[path] || routes['/'];
+
+  // Prevent cashier from accessing admin-only pages
+  if (route.adminOnly && !isAdmin()) {
+    window.location.hash = '/';
+    return;
+  }
+
   const mainContent = document.getElementById('main-content');
 
   // Render page
@@ -48,6 +74,9 @@ function navigateTo(path) {
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.toggle('active', item.id === route.navId);
   });
+
+  // Update sidebar visibility based on role
+  updateSidebarVisibility();
 }
 
 // Initialize store and then render
@@ -66,6 +95,14 @@ initStore().then((success) => {
 
   // Final load
   navigateTo(getRoute());
+});
+
+// ---- Logout ----
+document.getElementById('logout-btn')?.addEventListener('click', () => {
+  localStorage.removeItem('kmarket_token');
+  localStorage.removeItem('kmarket_user');
+  window.location.hash = '/login';
+  window.location.reload();
 });
 
 // ---- Mobile Menu Logic ----

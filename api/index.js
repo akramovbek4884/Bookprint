@@ -1,4 +1,4 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import db from './db.js';
@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-const JWT_SECRET = 'bookprint_super_secret_key_123'; // In production, use process.env
+const JWT_SECRET = process.env.JWT_SECRET || 'bookprint_fallback_secret_change_me';
 
 async function initDb() {
     try {
@@ -44,6 +44,8 @@ async function initDb() {
             id SERIAL PRIMARY KEY,
             sale_id INTEGER REFERENCES sales(id),
             product_id INTEGER REFERENCES products(id),
+            name TEXT,
+            barcode TEXT,
             qty INTEGER NOT NULL,
             price INTEGER NOT NULL,
             subtotal INTEGER NOT NULL
@@ -55,12 +57,41 @@ async function initDb() {
             const hash = bcrypt.hashSync('admin123', 8);
             await db.query('INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3)', ['admin', hash, 'admin']);
         }
+
+        // Add name/barcode columns to sale_items if missing (migration)
+        try {
+            await db.query(`ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS name TEXT`);
+            await db.query(`ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS barcode TEXT`);
+        } catch (e) {
+            // columns already exist, ignore
+        }
+
         console.log('Database tables verified/created.');
     } catch (err) {
         console.error('Database initialization error:', err);
     }
 }
 initDb();
+
+// --- AUTH MIDDLEWARE ---
+function authenticate(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: "Ruhsat yo'q (Token topilmadi)" });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Token yaroqsiz' });
+        req.user = user;
+        next();
+    });
+}
+
+function requireAdmin(req, res, next) {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Faqat admin uchun ruxsat berilgan" });
+    }
+    next();
+}
 
 // --- AUTH API ---
 app.post('/api/auth/login', async (req, res) => {
@@ -75,30 +106,63 @@ app.post('/api/auth/login', async (req, res) => {
             const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
             res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
         } else {
-            res.status(401).json({ error: 'Parol noto\'g\'ri' });
+            res.status(401).json({ error: "Parol noto'g'ri" });
         }
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Middleware to protect routes
-function authenticate(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Ruhsat yo\'q (Token topilmadi)' });
+// --- USERS API (Admin only) ---
+app.get('/api/users', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const result = await db.query('SELECT id, username, role FROM users ORDER BY id');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Token yaroqsiz' });
-        req.user = user;
-        next();
-    });
-}
+app.post('/api/users', authenticate, requireAdmin, async (req, res) => {
+    const { username, password, role } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: "Username va parol kiritilishi shart" });
+    }
 
-// --- PRODUCTS API ---
+    try {
+        const hash = bcrypt.hashSync(password, 8);
+        const validRole = role === 'admin' ? 'admin' : 'cashier';
+        const result = await db.query(
+            'INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id, username, role',
+            [username, hash, validRole]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        if (err.message.includes('unique') || err.message.includes('duplicate')) {
+            return res.status(400).json({ error: "Bu foydalanuvchi nomi allaqachon mavjud" });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
 
-// Get all products
-app.get('/api/products', async (req, res) => {
+app.delete('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+
+    // Prevent deleting yourself
+    if (parseInt(id) === req.user.id) {
+        return res.status(400).json({ error: "O'zingizni o'chira olmaysiz" });
+    }
+
+    try {
+        await db.query('DELETE FROM users WHERE id = $1', [id]);
+        res.json({ message: "O'chirildi" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- PRODUCTS API (Protected) ---
+app.get('/api/products', authenticate, async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM products ORDER BY id DESC');
         res.json(result.rows);
@@ -107,11 +171,10 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// Add a product
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', authenticate, async (req, res) => {
     const { barcode, name, price, cost_price, stock, category } = req.body;
     if (!barcode || !name || price == null || stock == null) {
-        return res.status(400).json({ error: 'Barcha maydonlar to\'ldirilishi shart' });
+        return res.status(400).json({ error: "Barcha maydonlar to'ldirilishi shart" });
     }
 
     try {
@@ -123,8 +186,7 @@ app.post('/api/products', async (req, res) => {
     }
 });
 
-// Update a product
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', authenticate, async (req, res) => {
     const { id } = req.params;
     const { barcode, name, price, cost_price, stock, category } = req.body;
 
@@ -137,8 +199,7 @@ app.put('/api/products/:id', async (req, res) => {
     }
 });
 
-// Delete a product
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', authenticate, requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await db.query('DELETE FROM products WHERE id = $1', [id]);
@@ -148,12 +209,11 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
-// --- SALES API ---
-
-// Add a new sale
-app.post('/api/sales', async (req, res) => {
-    const { receiptNo, total, items, user_id } = req.body;
+// --- SALES API (Protected) ---
+app.post('/api/sales', authenticate, async (req, res) => {
+    const { receiptNo, total, items } = req.body;
     const date = new Date().toISOString();
+    const user_id = req.user.id;
 
     const client = await db.pool.connect();
     try {
@@ -161,19 +221,21 @@ app.post('/api/sales', async (req, res) => {
 
         const saleResult = await client.query(
             'INSERT INTO sales (receiptNo, total, date, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
-            [receiptNo, total, date, user_id || null]
+            [receiptNo, total, date, user_id]
         );
         const saleId = saleResult.rows[0].id;
 
         for (const item of items) {
             await client.query(
-                'INSERT INTO sale_items (sale_id, product_id, qty, price, subtotal) VALUES ($1, $2, $3, $4, $5)',
-                [saleId, item.id, item.qty, item.price, item.subtotal]
+                'INSERT INTO sale_items (sale_id, product_id, name, barcode, qty, price, subtotal) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                [saleId, item.id || null, item.name || '', item.barcode || '', item.qty, item.price, item.subtotal]
             );
-            await client.query(
-                'UPDATE products SET stock = stock - $1 WHERE id = $2',
-                [item.qty, item.id]
-            );
+            if (item.id) {
+                await client.query(
+                    'UPDATE products SET stock = stock - $1 WHERE id = $2',
+                    [item.qty, item.id]
+                );
+            }
         }
 
         await client.query('COMMIT');
@@ -186,16 +248,25 @@ app.post('/api/sales', async (req, res) => {
     }
 });
 
-// Get all sales (with items)
-app.get('/api/sales', async (req, res) => {
+app.get('/api/sales', authenticate, async (req, res) => {
     try {
         const salesResult = await db.query('SELECT * FROM sales ORDER BY id DESC');
-        const itemsResult = await db.query('SELECT * FROM sale_items');
+        const itemsResult = await db.query(`
+            SELECT si.*, p.name AS product_name, p.barcode AS product_barcode
+            FROM sale_items si
+            LEFT JOIN products p ON si.product_id = p.id
+        `);
 
         const sales = salesResult.rows.map(sale => {
             return {
                 ...sale,
-                items: itemsResult.rows.filter(item => item.sale_id === sale.id)
+                items: itemsResult.rows
+                    .filter(item => item.sale_id === sale.id)
+                    .map(item => ({
+                        ...item,
+                        name: item.name || item.product_name || 'Noma\'lum',
+                        barcode: item.barcode || item.product_barcode || ''
+                    }))
             };
         });
 
