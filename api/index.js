@@ -1,16 +1,18 @@
-const express = require('express');
-const cors = require('cors');
-const db = require('./db.cjs');
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import db from './db.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'bookprint_super_secret_key_123'; // In production, use process.env
 
 async function initDb() {
@@ -193,11 +195,10 @@ app.get('/api/sales', async (req, res) => {
     }
 });
 
-
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     app.listen(PORT, () => {
         console.log('Server is running on http://localhost:' + PORT);
     });
 }
 
-module.exports = app;
+export default app;
