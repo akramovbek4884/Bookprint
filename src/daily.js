@@ -99,8 +99,15 @@ export function initDaily() {
   }
 }
 
+function getIsAdmin() {
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  return user && user.role === 'admin';
+}
+
 function loadDailyData(dateStr) {
   const summary = getDailySummary(dateStr);
+  const isAdmin = getIsAdmin();
 
   // Stats
   const statsEl = document.getElementById('daily-stats');
@@ -155,7 +162,10 @@ function loadDailyData(dateStr) {
               <p>${p.qty} ta sotildi</p>
             </div>
           </div>
-          <div class="sale-amount">${formatPrice(p.revenue)}</div>
+          <div class="sale-amount" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+            ${formatPrice(p.revenue)}
+            ${isAdmin ? `<button class="btn-clear-top-product" data-barcode="${p.barcode}" style="background: none; border: none; font-size: 1.1rem; color: #ef4444; cursor: pointer; padding: 4px;" title="Ro'yxatdan tozalash">✖</button>` : ''}
+          </div>
         </div>
       `).join('');
     }
@@ -173,7 +183,12 @@ function loadDailyData(dateStr) {
           <td class="mono">${s.receiptno || s.receiptNo || 'Chek raqamsiz'}</td>
           <td>${formatTime(s.timestamp || s.date)}</td>
           <td class="text-center">${s.items ? s.items.length : 0}</td>
-          <td class="text-right price">${formatPrice(s.total)}</td>
+          <td class="text-right price">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+              ${formatPrice(s.total)}
+              ${isAdmin ? `<button class="btn-clear-sale" data-id="${s.id}" style="background: none; border: none; font-size: 1.1rem; color: #ef4444; cursor: pointer; padding: 4px;" title="Ro'yxatdan tozalash">✖</button>` : ''}
+            </div>
+          </td>
         </tr>
       `).join('');
 
@@ -184,8 +199,38 @@ function loadDailyData(dateStr) {
           }
         });
       });
+
+      document.querySelectorAll('.btn-clear-sale').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = parseInt(btn.dataset.id);
+          if (!isNaN(id)) {
+            const hidden = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
+            if (!hidden.includes(id)) {
+              hidden.push(id);
+              localStorage.setItem('hiddenSales', JSON.stringify(hidden));
+              loadDailyData(dateStr);
+            }
+          }
+        });
+      });
     }
   }
+
+  document.querySelectorAll('.btn-clear-top-product').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const barcode = btn.dataset.barcode;
+      if (barcode) {
+        const hidden = JSON.parse(localStorage.getItem('hiddenTopProducts') || '[]');
+        if (!hidden.includes(barcode)) {
+          hidden.push(barcode);
+          localStorage.setItem('hiddenTopProducts', JSON.stringify(hidden));
+          loadDailyData(dateStr);
+        }
+      }
+    });
+  });
 }
 
 function renderHourlyChart(hourly) {

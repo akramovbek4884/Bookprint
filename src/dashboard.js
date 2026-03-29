@@ -8,8 +8,7 @@ export function renderDashboard() {
   const today = getTodayStr();
   const summary = getDailySummary(today);
   const allSales = getSales();
-  const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
-  const recentSales = allSales.filter(s => !hiddenSales.includes(s.id)).slice(0, 5);
+  const recentSales = allSales.slice(0, 5);
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -126,8 +125,7 @@ export function initDashboard() {
 
 function attachDashboardEvents() {
   const allSales = getSales();
-  const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
-  const recentSales = allSales.filter(s => !hiddenSales.includes(s.id)).slice(0, 5);
+  const recentSales = allSales.slice(0, 5);
 
   document.querySelectorAll('.recent-sale-item').forEach((item, i) => {
     item.style.cursor = 'pointer';

@@ -147,7 +147,8 @@ export async function deleteProduct(dbId) {
 
 // ---- Sales ----
 export function getSales() {
-    return memorySales;
+    const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
+    return memorySales.filter(s => !hiddenSales.includes(s.id));
 }
 
 export async function saveSale(sale) {
@@ -213,11 +214,11 @@ export function getCurrentMonthStr() {
 }
 
 export function getSalesByDate(dateStr) {
-    return memorySales.filter(s => (s.date || s.timestamp).startsWith(dateStr));
+    return getSales().filter(s => (s.date || s.timestamp).startsWith(dateStr));
 }
 
 export function getSalesByMonth(monthStr) {
-    return memorySales.filter(s => (s.date || s.timestamp).startsWith(monthStr));
+    return getSales().filter(s => (s.date || s.timestamp).startsWith(monthStr));
 }
 
 export function getDailySummary(dateStr) {
@@ -261,15 +262,17 @@ function buildSummary(sales) {
         if (s.items) {
             s.items.forEach(item => {
                 const name = item.name || item.product_name || 'Noma\'lum';
-                if (!productMap[name]) productMap[name] = { qty: 0, revenue: 0 };
+                if (!productMap[name]) productMap[name] = { qty: 0, revenue: 0, barcode: item.barcode };
                 productMap[name].qty += item.qty;
                 productMap[name].revenue += item.subtotal;
             });
         }
     });
 
+    const hiddenTopProducts = JSON.parse(localStorage.getItem('hiddenTopProducts') || '[]');
     const topProducts = Object.entries(productMap)
         .map(([name, d]) => ({ name, ...d }))
+        .filter(p => !hiddenTopProducts.includes(p.barcode))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 10);
 
