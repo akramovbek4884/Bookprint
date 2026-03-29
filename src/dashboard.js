@@ -11,6 +11,10 @@ export function renderDashboard() {
   const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
   const recentSales = allSales.filter(s => !hiddenSales.includes(s.id)).slice(0, 5);
 
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isAdmin = user && user.role === 'admin';
+
   return `
     <div class="page-enter">
       <div class="page-header">
@@ -97,7 +101,7 @@ export function renderDashboard() {
               </div>
               <div class="sale-amount" style="white-space: nowrap; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
                 ${formatPrice(sale.total)}
-                <button class="btn-clear-sale" data-id="${sale.id}" style="background: none; border: none; font-size: 1.1rem; color: #ef4444; cursor: pointer; padding: 4px;" title="Ro'yxatdan tozalash">✖</button>
+                ${isAdmin ? `<button class="btn-clear-sale" data-id="${sale.id}" style="background: none; border: none; font-size: 1.1rem; color: #ef4444; cursor: pointer; padding: 4px;" title="Ro'yxatdan tozalash">✖</button>` : ''}
               </div>
             </div>
           `}).join('')}
