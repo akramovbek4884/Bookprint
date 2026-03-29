@@ -8,7 +8,8 @@ export function renderDashboard() {
   const today = getTodayStr();
   const summary = getDailySummary(today);
   const allSales = getSales();
-  const recentSales = allSales.slice(0, 5);
+  const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
+  const recentSales = allSales.filter(s => !hiddenSales.includes(s.id)).slice(0, 5);
 
   return `
     <div class="page-enter">
@@ -94,7 +95,10 @@ export function renderDashboard() {
                   <p>${sale.receiptno || sale.receiptNo || 'Cheksiz'} • ${formatTime(sale.timestamp || sale.date)}</p>
                 </div>
               </div>
-              <div class="sale-amount" style="white-space: nowrap;">${formatPrice(sale.total)}</div>
+              <div class="sale-amount" style="white-space: nowrap; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                ${formatPrice(sale.total)}
+                <button class="btn-clear-sale" data-id="${sale.id}" style="background: none; border: none; font-size: 1.1rem; color: #ef4444; cursor: pointer; padding: 4px;" title="Ro'yxatdan tozalash">✖</button>
+              </div>
             </div>
           `}).join('')}
         </div>
@@ -118,13 +122,34 @@ export function initDashboard() {
 
 function attachDashboardEvents() {
   const allSales = getSales();
-  const recentSales = allSales.slice(0, 5);
+  const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
+  const recentSales = allSales.filter(s => !hiddenSales.includes(s.id)).slice(0, 5);
 
   document.querySelectorAll('.recent-sale-item').forEach((item, i) => {
     item.style.cursor = 'pointer';
     item.addEventListener('click', () => {
       if (recentSales[i]) {
         showReceipt(recentSales[i]);
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-clear-sale').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.id);
+      if (!isNaN(id)) {
+        const hidden = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
+        if (!hidden.includes(id)) {
+          hidden.push(id);
+          localStorage.setItem('hiddenSales', JSON.stringify(hidden));
+
+          const mainContent = document.getElementById('main-content');
+          if (mainContent) {
+            mainContent.innerHTML = renderDashboard();
+            attachDashboardEvents();
+          }
+        }
       }
     });
   });
