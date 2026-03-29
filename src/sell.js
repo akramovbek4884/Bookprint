@@ -235,9 +235,10 @@ function startScanner() {
     html5QrcodeScanner = new Html5QrcodeScanner(
       "reader",
       {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
+        fps: 20,
+        qrbox: { width: 280, height: 150 },
+        aspectRatio: 1.7777777778,
+        disableFlip: true,
         videoConstraints: {
           facingMode: "environment"
         }
