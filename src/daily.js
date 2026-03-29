@@ -100,7 +100,7 @@ export function initDaily() {
 }
 
 function getIsAdmin() {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('kmarket_user');
   const user = userStr ? JSON.parse(userStr) : null;
   return user && user.role === 'admin';
 }

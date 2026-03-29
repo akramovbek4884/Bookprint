@@ -10,7 +10,7 @@ export function renderDashboard() {
   const allSales = getSales();
   const recentSales = allSales.slice(0, 5);
 
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('kmarket_user');
   const user = userStr ? JSON.parse(userStr) : null;
   const isAdmin = user && user.role === 'admin';
 
