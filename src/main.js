@@ -96,8 +96,8 @@ initStore().then((success) => {
   // Final load
   navigateTo(getRoute());
 
-  // Start polling for updates every 15 seconds
-  startPolling(15000);
+  // Start polling for updates every 60 seconds
+  startPolling(60000);
 });
 
 // Refresh current view if store updates via polling
