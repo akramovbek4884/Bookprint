@@ -4,7 +4,7 @@ export function renderLogin() {
       <div class="mesh-gradient"></div>
       <div class="card card-glass login-card">
         <div class="login-logo">
-          <img src="/src/assets/logo.png" alt="Bookprint Logo" class="logo-img" />
+          <img src="/logo.png" alt="Bookprint Logo" class="logo-img" />
           <h2 class="login-title">Tizimga kirish</h2>
           <p class="login-subtitle">Xush kelibsiz! Iltimos, ma'lumotlaringizni kiriting</p>
         </div>
