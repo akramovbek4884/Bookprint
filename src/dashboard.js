@@ -8,7 +8,7 @@ export function renderDashboard() {
   const today = getTodayStr();
   const summary = getDailySummary(today);
   const allSales = getSales();
-  const recentSales = allSales.slice(-5).reverse();
+  const recentSales = allSales.slice(0, 5);
 
   return `
     <div class="page-enter">
@@ -118,7 +118,7 @@ export function initDashboard() {
 
 function attachDashboardEvents() {
   const allSales = getSales();
-  const recentSales = allSales.slice(-5).reverse();
+  const recentSales = allSales.slice(0, 5);
 
   document.querySelectorAll('.recent-sale-item').forEach((item, i) => {
     item.style.cursor = 'pointer';
