@@ -148,7 +148,11 @@ export async function deleteProduct(dbId) {
 // ---- Sales ----
 export function getSales() {
     const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
-    return memorySales.filter(s => !hiddenSales.includes(s.id));
+    const hiddenDays = JSON.parse(localStorage.getItem('hiddenDays') || '[]');
+    return memorySales.filter(s => {
+        const d = (s.date || s.timestamp).slice(0, 10);
+        return !hiddenSales.includes(s.id) && !hiddenDays.includes(d);
+    });
 }
 
 export async function saveSale(sale) {

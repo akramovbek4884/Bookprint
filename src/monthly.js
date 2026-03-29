@@ -116,8 +116,15 @@ export function initMonthly() {
   }
 }
 
+function getIsAdmin() {
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  return user && user.role === 'admin';
+}
+
 function loadMonthlyData(monthStr) {
   const summary = getMonthlySummary(monthStr);
+  const isAdmin = getIsAdmin();
 
   // Stats
   const statsEl = document.getElementById('monthly-stats');
@@ -165,7 +172,12 @@ function loadMonthlyData(monthStr) {
         <tr>
           <td class="mono">${day}</td>
           <td class="text-center">${data.count}</td>
-          <td class="text-right price">${formatPrice(data.revenue)}</td>
+          <td class="text-right price">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+              ${formatPrice(data.revenue)}
+              ${isAdmin ? `<button class="btn-clear-day" data-day="${day}" style="background: none; border: none; font-size: 1.1rem; color: #ef4444; cursor: pointer; padding: 4px;" title="Kunni tozalash">✖</button>` : ''}
+            </div>
+          </td>
         </tr>
       `).join('');
 
@@ -191,7 +203,12 @@ function loadMonthlyData(monthStr) {
           <td>${i + 1}</td>
           <td><strong>${p.name}</strong></td>
           <td class="text-center">${p.qty} ta</td>
-          <td class="text-right price">${formatPrice(p.revenue)}</td>
+          <td class="text-right price">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+              ${formatPrice(p.revenue)}
+              ${isAdmin ? `<button class="btn-clear-top-product" data-barcode="${p.barcode}" style="background: none; border: none; font-size: 1.1rem; color: #ef4444; cursor: pointer; padding: 4px;" title="Ro'yxatdan tozalash">✖</button>` : ''}
+            </div>
+          </td>
         </tr>
       `).join('');
     }
@@ -200,6 +217,37 @@ function loadMonthlyData(monthStr) {
   // Charts
   renderMonthlyLineChart(summary.dailyMap);
   renderMonthlyPieChart(summary.topProducts);
+
+  // Click listeners for clearing
+  document.querySelectorAll('.btn-clear-day').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const day = btn.dataset.day;
+      if (day) {
+        const hidden = JSON.parse(localStorage.getItem('hiddenDays') || '[]');
+        if (!hidden.includes(day)) {
+          hidden.push(day);
+          localStorage.setItem('hiddenDays', JSON.stringify(hidden));
+          loadMonthlyData(monthStr); // triggers global app re-computation since store.js excludes the day
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-clear-top-product').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const barcode = btn.dataset.barcode;
+      if (barcode) {
+        const hidden = JSON.parse(localStorage.getItem('hiddenTopProducts') || '[]');
+        if (!hidden.includes(barcode)) {
+          hidden.push(barcode);
+          localStorage.setItem('hiddenTopProducts', JSON.stringify(hidden));
+          loadMonthlyData(monthStr);
+        }
+      }
+    });
+  });
 }
 
 function renderMonthlyLineChart(dailyMap) {
