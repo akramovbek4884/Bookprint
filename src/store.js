@@ -147,11 +147,11 @@ export async function deleteProduct(dbId) {
 
 // ---- Sales ----
 export function getSales() {
-    const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]');
+    const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]').map(String);
     const hiddenDays = JSON.parse(localStorage.getItem('hiddenDays') || '[]');
     return memorySales.filter(s => {
         const d = (s.date || s.timestamp).slice(0, 10);
-        return !hiddenSales.includes(s.id) && !hiddenDays.includes(d);
+        return !hiddenSales.includes(String(s.id)) && !hiddenDays.includes(d);
     });
 }
 
@@ -273,10 +273,10 @@ function buildSummary(sales) {
         }
     });
 
-    const hiddenTopProducts = JSON.parse(localStorage.getItem('hiddenTopProducts') || '[]');
+    const hiddenTopProducts = JSON.parse(localStorage.getItem('hiddenTopProducts') || '[]').map(String);
     const topProducts = Object.entries(productMap)
         .map(([name, d]) => ({ name, ...d }))
-        .filter(p => !hiddenTopProducts.includes(p.barcode))
+        .filter(p => !hiddenTopProducts.includes(String(p.barcode)))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 10);
 

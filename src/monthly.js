@@ -88,6 +88,13 @@ export function initMonthly() {
 
   if (picker) {
     loadMonthlyData(picker.value);
+
+    window.addEventListener('store-updated', () => {
+      if (window.location.hash === '#/monthly' && picker) {
+        loadMonthlyData(picker.value);
+      }
+    });
+
     picker.addEventListener('change', () => {
       loadMonthlyData(picker.value);
     });
@@ -222,13 +229,13 @@ function loadMonthlyData(monthStr) {
   document.querySelectorAll('.btn-clear-day').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const day = btn.dataset.day;
-      if (day) {
-        const hidden = JSON.parse(localStorage.getItem('hiddenDays') || '[]');
+      const day = String(btn.dataset.day);
+      if (day && day !== "undefined" && day !== "null") {
+        const hidden = JSON.parse(localStorage.getItem('hiddenDays') || '[]').map(String);
         if (!hidden.includes(day)) {
           hidden.push(day);
           localStorage.setItem('hiddenDays', JSON.stringify(hidden));
-          loadMonthlyData(monthStr); // triggers global app re-computation since store.js excludes the day
+          window.dispatchEvent(new CustomEvent('store-updated'));
         }
       }
     });
@@ -237,13 +244,13 @@ function loadMonthlyData(monthStr) {
   document.querySelectorAll('.btn-clear-top-product').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const barcode = btn.dataset.barcode;
-      if (barcode) {
-        const hidden = JSON.parse(localStorage.getItem('hiddenTopProducts') || '[]');
+      const barcode = String(btn.dataset.barcode);
+      if (barcode && barcode !== "undefined" && barcode !== "null") {
+        const hidden = JSON.parse(localStorage.getItem('hiddenTopProducts') || '[]').map(String);
         if (!hidden.includes(barcode)) {
           hidden.push(barcode);
           localStorage.setItem('hiddenTopProducts', JSON.stringify(hidden));
-          loadMonthlyData(monthStr);
+          window.dispatchEvent(new CustomEvent('store-updated'));
         }
       }
     });
