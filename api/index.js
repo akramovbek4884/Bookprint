@@ -66,6 +66,14 @@ async function initDb() {
             // columns already exist, ignore
         }
 
+        // Fix foreign key constraint for product deletion
+        try {
+            await db.query(`ALTER TABLE sale_items DROP CONSTRAINT IF EXISTS sale_items_product_id_fkey`);
+            await db.query(`ALTER TABLE sale_items ADD CONSTRAINT sale_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL`);
+        } catch (e) {
+            console.error("Constraint migration error:", e.message);
+        }
+
         console.log('Database tables verified/created.');
     } catch (err) {
         console.error('Database initialization error:', err);
