@@ -211,7 +211,14 @@ app.delete('/api/products/:id', authenticate, requireAdmin, async (req, res) => 
 
 // --- SALES API (Protected) ---
 app.post('/api/sales', authenticate, async (req, res) => {
-    const { receiptNo, total, items } = req.body;
+    const { total, items } = req.body;
+    let { receiptNo } = req.body;
+
+    // Generate a default receipt number if missing
+    if (!receiptNo) {
+        receiptNo = `BP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    }
+
     const date = new Date().toISOString();
     const user_id = req.user.id;
 

@@ -374,6 +374,7 @@ export function initSell() {
       payBtn.textContent = '⌛ Saqlanmoqda...';
 
       const sale = {
+        receiptNo: `BP-${Date.now()}`,
         items: cart.map(item => ({
           id: item.id,
           barcode: item.barcode,
