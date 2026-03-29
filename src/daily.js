@@ -3,6 +3,7 @@
 // ========================================
 import { getDailySummary, getTodayStr, formatPrice, formatTime, formatDate } from './store.js';
 import { exportToCSV } from './utils.js';
+import { showReceipt } from './sell.js';
 import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
@@ -167,7 +168,7 @@ function loadDailyData(dateStr) {
       tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><p>Bu kunda savdo qilinmagan</p></div></td></tr>';
     } else {
       tbody.innerHTML = summary.sales.map((s, i) => `
-        <tr>
+        <tr class="daily-sale-row" style="cursor: pointer;">
           <td>${i + 1}</td>
           <td class="mono">${s.receiptno || s.receiptNo || 'Chek raqamsiz'}</td>
           <td>${formatTime(s.timestamp || s.date)}</td>
@@ -175,6 +176,14 @@ function loadDailyData(dateStr) {
           <td class="text-right price">${formatPrice(s.total)}</td>
         </tr>
       `).join('');
+
+      document.querySelectorAll('.daily-sale-row').forEach((row, i) => {
+        row.addEventListener('click', () => {
+          if (summary.sales[i]) {
+            showReceipt(summary.sales[i]);
+          }
+        });
+      });
     }
   }
 }

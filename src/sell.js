@@ -469,7 +469,7 @@ function attachQuickCardListeners() {
   });
 }
 
-function showReceipt(sale) {
+export function showReceipt(sale) {
   const modal = document.getElementById('receipt-modal');
   const content = document.getElementById('receipt-content');
 
@@ -481,7 +481,7 @@ function showReceipt(sale) {
     <div class="receipt-header">
       <h2>🌳 BOOKPRINT</h2>
       <p>Sana: ${dateStr} | Vaqt: ${timeStr}</p>
-      <p>Chek №: ${sale.receiptNo}</p>
+      <p>Chek №: ${sale.receiptno || sale.receiptNo || 'Cheksiz'}</p>
     </div>
     <table class="receipt-items">
       <thead>

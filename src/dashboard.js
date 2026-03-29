@@ -2,6 +2,7 @@
 // Dashboard Page
 // ========================================
 import { getSales, getDailySummary, getTodayStr, formatPrice, formatTime } from './store.js';
+import { showReceipt } from './sell.js';
 
 export function renderDashboard() {
   const today = getTodayStr();
@@ -105,9 +106,26 @@ export function renderDashboard() {
 export function initDashboard() {
   window.addEventListener('store-updated', () => {
     const mainContent = document.getElementById('main-content');
-    if (mainContent && window.location.hash === '' || window.location.hash === '#/') {
+    if (mainContent && (window.location.hash === '' || window.location.hash === '#/')) {
       console.log("Refreshing dashboard stats...");
       mainContent.innerHTML = renderDashboard();
+      attachDashboardEvents();
     }
+  });
+
+  attachDashboardEvents();
+}
+
+function attachDashboardEvents() {
+  const allSales = getSales();
+  const recentSales = allSales.slice(-5).reverse();
+
+  document.querySelectorAll('.recent-sale-item').forEach((item, i) => {
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', () => {
+      if (recentSales[i]) {
+        showReceipt(recentSales[i]);
+      }
+    });
   });
 }
