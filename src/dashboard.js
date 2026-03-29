@@ -79,18 +79,23 @@ export function renderDashboard() {
               <div class="empty-icon">🛍️</div>
               <p>Hali savdo qilinmagan</p>
             </div>
-          ` : recentSales.map((sale, i) => `
+          ` : recentSales.map((sale, i) => {
+    const productNames = sale.items && sale.items.length > 0
+      ? sale.items.map(p => p.name).join(', ')
+      : "Noma'lum mahsulot";
+
+    return `
             <div class="recent-sale-item">
-              <div class="sale-info">
+              <div class="sale-info" style="min-width: 0; flex: 1;">
                 <div class="sale-number">#${i + 1}</div>
-                <div class="sale-details">
-                  <h4>${sale.receiptno || sale.receiptNo || 'Chek raqamsiz'}</h4>
-                  <p>${sale.items ? sale.items.length : 0} mahsulot • ${formatTime(sale.timestamp || sale.date)}</p>
+                <div class="sale-details" style="min-width: 0;">
+                  <h4 title="${productNames}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${productNames}</h4>
+                  <p>${sale.receiptno || sale.receiptNo || 'Cheksiz'} • ${formatTime(sale.timestamp || sale.date)}</p>
                 </div>
               </div>
-              <div class="sale-amount">${formatPrice(sale.total)}</div>
+              <div class="sale-amount" style="white-space: nowrap;">${formatPrice(sale.total)}</div>
             </div>
-          `).join('')}
+          `}).join('')}
         </div>
       </div>
     </div>
