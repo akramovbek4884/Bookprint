@@ -209,14 +209,13 @@ app.delete('/api/products/:id', authenticate, requireAdmin, async (req, res) => 
     }
 });
 
-// --- SALES API (Protected) ---
 app.post('/api/sales', authenticate, async (req, res) => {
     const { total, items } = req.body;
-    let { receiptNo } = req.body;
+    let receiptno = req.body.receiptno || req.body.receiptNo;
 
     // Generate a default receipt number if missing
-    if (!receiptNo) {
-        receiptNo = `BP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    if (!receiptno) {
+        receiptno = `BP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     }
 
     const date = new Date().toISOString();
@@ -227,8 +226,8 @@ app.post('/api/sales', authenticate, async (req, res) => {
         await client.query('BEGIN');
 
         const saleResult = await client.query(
-            'INSERT INTO sales (receiptNo, total, date, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
-            [receiptNo, total, date, user_id]
+            'INSERT INTO sales (receiptno, total, date, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
+            [receiptno, total, date, user_id]
         );
         const saleId = saleResult.rows[0].id;
 
