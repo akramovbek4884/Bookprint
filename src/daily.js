@@ -24,7 +24,6 @@ export function renderDaily() {
           <label>📆 Sanani tanlang:</label>
           <input type="date" id="daily-date-picker" value="${today}" class="input" />
         </div>
-        <button class="btn btn-secondary" id="daily-export-btn">📥 Excel</button>
       </div>
 
       <div class="stats-grid" id="daily-stats">
@@ -67,7 +66,6 @@ export function renderDaily() {
 
 export function initDaily() {
   const datePicker = document.getElementById('daily-date-picker');
-  const exportBtn = document.getElementById('daily-export-btn');
 
   if (datePicker) {
     loadDailyData(datePicker.value);
@@ -80,28 +78,6 @@ export function initDaily() {
 
     datePicker.addEventListener('change', () => {
       loadDailyData(datePicker.value);
-    });
-  }
-
-  if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
-      const dateStr = datePicker ? datePicker.value : getTodayStr();
-      const summary = getDailySummary(dateStr);
-      if (summary.sales.length === 0) {
-        alert("Eksport qilish uchun ma'lumot yo'q.");
-        return;
-      }
-
-      const headers = ['Chek Nomeri', 'Sana', 'Vaqt', 'Mahsulotlar soni', 'Summa'];
-      const rows = summary.sales.map(s => [
-        s.receiptNo,
-        formatDate(s.timestamp || s.date),
-        formatTime(s.timestamp || s.date),
-        s.items ? s.items.length : 0,
-        s.total
-      ]);
-
-      exportToCSV(headers, rows, `Kunlik_Hisobot_${dateStr}.csv`);
     });
   }
 }

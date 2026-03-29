@@ -24,7 +24,6 @@ export function renderMonthly() {
           <label>📆 Oyni tanlang:</label>
           <input type="month" id="monthly-picker" value="${currentMonth}" class="input" />
         </div>
-        <button class="btn btn-secondary" id="monthly-export-btn">📥 Excel</button>
       </div>
 
       <div class="stats-grid" id="monthly-stats">
@@ -84,7 +83,6 @@ export function renderMonthly() {
 
 export function initMonthly() {
   const picker = document.getElementById('monthly-picker');
-  const exportBtn = document.getElementById('monthly-export-btn');
 
   if (picker) {
     loadMonthlyData(picker.value);
@@ -97,28 +95,6 @@ export function initMonthly() {
 
     picker.addEventListener('change', () => {
       loadMonthlyData(picker.value);
-    });
-  }
-
-  if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
-      const monthStr = picker ? picker.value : getCurrentMonthStr();
-      const summary = getMonthlySummary(monthStr);
-      const entries = Object.entries(summary.dailyMap).sort(([a], [b]) => a.localeCompare(b));
-
-      if (entries.length === 0) {
-        alert("Eksport qilish uchun ma'lumot yo'q.");
-        return;
-      }
-
-      const headers = ['Sana', 'Savdolar soni', 'Tushum'];
-      const rows = entries.map(([day, data]) => [
-        day,
-        data.count,
-        data.revenue
-      ]);
-
-      exportToCSV(headers, rows, `Oylik_Hisobot_${monthStr}.csv`);
     });
   }
 }
