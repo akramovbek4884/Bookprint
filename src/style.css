@@ -316,14 +316,14 @@ body {
   position: absolute;
   inset: 0;
   background-color: var(--login-bg-1);
-  background-image: 
-    radial-gradient(at 0% 0%, var(--login-bg-2) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, var(--login-accent-1) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, var(--login-bg-2) 0, transparent 50%), 
-    radial-gradient(at 0% 50%, var(--login-accent-2) 0, transparent 50%), 
-    radial-gradient(at 100% 50%, var(--login-accent-1) 0, transparent 50%), 
-    radial-gradient(at 0% 100%, var(--login-bg-2) 0, transparent 50%), 
-    radial-gradient(at 50% 100%, var(--login-accent-2) 0, transparent 50%), 
+  background-image:
+    radial-gradient(at 0% 0%, var(--login-bg-2) 0, transparent 50%),
+    radial-gradient(at 50% 0%, var(--login-accent-1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, var(--login-bg-2) 0, transparent 50%),
+    radial-gradient(at 0% 50%, var(--login-accent-2) 0, transparent 50%),
+    radial-gradient(at 100% 50%, var(--login-accent-1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, var(--login-bg-2) 0, transparent 50%),
+    radial-gradient(at 50% 100%, var(--login-accent-2) 0, transparent 50%),
     radial-gradient(at 100% 100%, var(--login-bg-2) 0, transparent 50%);
   filter: blur(40px);
   opacity: 0.6;
@@ -331,8 +331,15 @@ body {
 }
 
 @keyframes mesh-fade {
-  0% { transform: scale(1); opacity: 0.5; }
-  100% { transform: scale(1.1); opacity: 0.8; }
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
 }
 
 .login-card {
@@ -347,8 +354,15 @@ body {
 }
 
 @keyframes login-appear {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .login-logo {
@@ -1635,7 +1649,13 @@ tbody tr:last-child td {
   }
 
   table {
-    min-width: 600px;
+    min-width: 100%;
+    font-size: 0.9rem;
+  }
+
+  th,
+  td {
+    padding: var(--space-sm) var(--space-xs);
   }
 
   /* Sell Page Optimizations */
@@ -1952,8 +1972,13 @@ tbody tr:last-child td {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {
@@ -1963,10 +1988,79 @@ tbody tr:last-child td {
     justify-content: space-between;
     align-items: center;
   }
+
   .mobile-logo {
-     flex: 1;
-     display: flex;
-     justify-content: center;
-     margin-right: -40px; /* Offset to center logo between hamburger and refresh */
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    margin-right: -40px;
   }
+}
+
+/* ========================================
+   List Items & Controls
+   ======================================== */
+.recent-sale-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-sm);
+  border-bottom: 1px solid var(--border-color);
+  transition: background var(--transition-fast);
+}
+
+.recent-sale-item:last-child {
+  border-bottom: none;
+}
+
+.recent-sale-item:hover {
+  background: var(--bg-card-hover);
+}
+
+.sale-info {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.sale-number {
+  font-weight: 800;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.sale-details h4 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+}
+
+.sale-details p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.btn-clear-sale,
+.btn-clear-day,
+.btn-clear-top-product {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--accent-danger);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-clear-sale:hover,
+.btn-clear-day:hover,
+.btn-clear-top-product:hover {
+  background: var(--accent-danger);
+  color: white;
 }
