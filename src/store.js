@@ -281,3 +281,28 @@ export function generateReceiptNo() {
     const todaySales = memorySales.filter(s => (s.date || s.timestamp).startsWith(new Date().toISOString().slice(0, 10)));
     return `KM-${today}-${String(todaySales.length + 1).padStart(4, '0')}`;
 }
+
+// ---- Polling ----
+let pollingInterval = null;
+
+export function startPolling(intervalMs = 15000) {
+    if (pollingInterval) return; // Already polling
+
+    pollingInterval = setInterval(async () => {
+        // Only poll if the user is logged in
+        if (localStorage.getItem('kmarket_token')) {
+            console.log("Polling for updates...");
+            await initStore();
+
+            // Trigger a custom event so the UI can refresh if needed
+            window.dispatchEvent(new CustomEvent('store-updated'));
+        }
+    }, intervalMs);
+}
+
+export function stopPolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
+}

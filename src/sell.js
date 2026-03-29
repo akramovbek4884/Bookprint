@@ -375,6 +375,7 @@ export function initSell() {
 
       const sale = {
         items: cart.map(item => ({
+          id: item.id,
           barcode: item.barcode,
           name: item.name,
           price: item.price,

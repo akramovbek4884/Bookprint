@@ -2,7 +2,7 @@
 // Main Entry — Router & Clock
 // ========================================
 import './style.css';
-import { initStore } from './store.js';
+import { initStore, startPolling, stopPolling } from './store.js';
 import { renderDashboard } from './dashboard.js';
 import { renderSell, initSell } from './sell.js';
 import { renderProducts, initProducts } from './products.js';
@@ -95,10 +95,20 @@ initStore().then((success) => {
 
   // Final load
   navigateTo(getRoute());
+
+  // Start polling for updates every 15 seconds
+  startPolling(15000);
+});
+
+// Refresh current view if store updates via polling
+window.addEventListener('store-updated', () => {
+  console.log("Store updated, refreshing view...");
+  navigateTo(getRoute());
 });
 
 // ---- Logout ----
 document.getElementById('logout-btn')?.addEventListener('click', () => {
+  stopPolling();
   localStorage.removeItem('kmarket_token');
   localStorage.removeItem('kmarket_user');
   window.location.hash = '/login';
