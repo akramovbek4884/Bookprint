@@ -96,8 +96,36 @@ initStore().then((success) => {
   // Final load
   navigateTo(getRoute());
 
-  // Start polling for updates every 60 seconds
-  startPolling(60000);
+  // Initial sync complete
+});
+
+// ---- Synchronization Logic ----
+async function syncStore(btn = null) {
+  if (btn) btn.classList.add('refreshing');
+
+  console.log("Syncing store...");
+  const success = await initStore();
+
+  if (success) {
+    // Trigger surgical update on current page
+    window.dispatchEvent(new CustomEvent('store-updated'));
+  }
+
+  if (btn) {
+    setTimeout(() => btn.classList.remove('refreshing'), 1000);
+  }
+}
+
+// 1. Manual Refresh logic
+document.getElementById('mobile-refresh-btn')?.addEventListener('click', (e) => syncStore(e.currentTarget));
+document.getElementById('sidebar-refresh-btn')?.addEventListener('click', (e) => syncStore(e.currentTarget));
+
+// 2. Visibility-based sync (sync when user comes back to the tab)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    console.log("Tab focused, triggering sync...");
+    syncStore();
+  }
 });
 
 // Refresh current view if store updates via polling
