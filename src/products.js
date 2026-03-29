@@ -174,10 +174,9 @@ export function initProducts() {
       html5QrcodeScanner = new Html5QrcodeScanner(
         "product-reader",
         {
-          fps: 20,
-          qrbox: { width: 280, height: 150 },
-          aspectRatio: 1.7777777778,
-          disableFlip: true,
+          fps: 10,
+          qrbox: { width: 280, height: 160 },
+          aspectRatio: 1.0,
           videoConstraints: {
             facingMode: "environment"
           }
