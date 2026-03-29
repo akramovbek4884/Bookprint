@@ -150,7 +150,7 @@ function loadDailyData(dateStr) {
           <div class="sale-info">
             <div class="sale-number">${i + 1}</div>
             <div class="sale-details">
-              <h4>${p.name}</h4>
+              <h4>${p.name || 'Noma\'lum mahsulot'}</h4>
               <p>${p.qty} ta sotildi</p>
             </div>
           </div>
@@ -169,9 +169,9 @@ function loadDailyData(dateStr) {
       tbody.innerHTML = summary.sales.map((s, i) => `
         <tr>
           <td>${i + 1}</td>
-          <td class="mono">${s.receiptNo}</td>
-          <td>${formatTime(s.timestamp)}</td>
-          <td class="text-center">${s.items.length}</td>
+          <td class="mono">${s.receiptno || s.receiptNo || 'Chek raqamsiz'}</td>
+          <td>${formatTime(s.timestamp || s.date)}</td>
+          <td class="text-center">${s.items ? s.items.length : 0}</td>
           <td class="text-right price">${formatPrice(s.total)}</td>
         </tr>
       `).join('');

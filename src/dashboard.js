@@ -84,8 +84,8 @@ export function renderDashboard() {
               <div class="sale-info">
                 <div class="sale-number">#${i + 1}</div>
                 <div class="sale-details">
-                  <h4>${sale.receiptNo}</h4>
-                  <p>${sale.items.length} mahsulot • ${formatTime(sale.timestamp)}</p>
+                  <h4>${sale.receiptno || sale.receiptNo || 'Chek raqamsiz'}</h4>
+                  <p>${sale.items ? sale.items.length : 0} mahsulot • ${formatTime(sale.timestamp || sale.date)}</p>
                 </div>
               </div>
               <div class="sale-amount">${formatPrice(sale.total)}</div>
