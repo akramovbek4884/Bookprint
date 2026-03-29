@@ -434,6 +434,9 @@ export function initSell() {
 
   attachCartEventListeners();
   attachQuickCardListeners();
+
+  // Surgical refresh: update only the product list when store data changes
+  window.addEventListener('store-updated', refreshProductListUI);
 }
 
 function attachQuickCardListeners() {

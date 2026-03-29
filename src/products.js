@@ -367,4 +367,7 @@ export function initProducts() {
     const subtitle = document.querySelector('.page-subtitle');
     if (subtitle) subtitle.textContent = `Mahsulotlarni boshqarish — ${getProducts().length} ta mahsulot`;
   }
+
+  // Surgical refresh: update only the table when store data changes
+  window.addEventListener('store-updated', refreshProductTable);
 }

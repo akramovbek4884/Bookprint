@@ -3,7 +3,7 @@
 // ========================================
 import './style.css';
 import { initStore, startPolling, stopPolling } from './store.js';
-import { renderDashboard } from './dashboard.js';
+import { renderDashboard, initDashboard } from './dashboard.js';
 import { renderSell, initSell } from './sell.js';
 import { renderProducts, initProducts } from './products.js';
 import { renderDaily, initDaily } from './daily.js';
@@ -14,7 +14,7 @@ import { initRobot } from './robot.js';
 
 // ---- Router ----
 const routes = {
-  '/': { render: renderDashboard, init: null, navId: 'nav-dashboard' },
+  '/': { render: renderDashboard, init: initDashboard, navId: 'nav-dashboard' },
   '/sell': { render: renderSell, init: initSell, navId: 'nav-sell' },
   '/products': { render: renderProducts, init: initProducts, navId: 'nav-products' },
   '/daily': { render: renderDaily, init: initDaily, navId: 'nav-daily', adminOnly: true },
@@ -102,8 +102,8 @@ initStore().then((success) => {
 
 // Refresh current view if store updates via polling
 window.addEventListener('store-updated', () => {
-  console.log("Store updated, refreshing view...");
-  navigateTo(getRoute());
+  console.log("Store updated, informing active page...");
+  // navigateTo is no longer called here to avoid resetting UI state (inputs, modals, camera)
 });
 
 // ---- Logout ----

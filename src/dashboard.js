@@ -4,12 +4,12 @@
 import { getSales, getDailySummary, getTodayStr, formatPrice, formatTime } from './store.js';
 
 export function renderDashboard() {
-    const today = getTodayStr();
-    const summary = getDailySummary(today);
-    const allSales = getSales();
-    const recentSales = allSales.slice(-5).reverse();
+  const today = getTodayStr();
+  const summary = getDailySummary(today);
+  const allSales = getSales();
+  const recentSales = allSales.slice(-5).reverse();
 
-    return `
+  return `
     <div class="page-enter">
       <div class="page-header">
         <h1 class="page-title">📊 Bosh sahifa</h1>
@@ -95,4 +95,14 @@ export function renderDashboard() {
       </div>
     </div>
   `;
+}
+
+export function initDashboard() {
+  window.addEventListener('store-updated', () => {
+    const mainContent = document.getElementById('main-content');
+    if (mainContent && window.location.hash === '' || window.location.hash === '#/') {
+      console.log("Refreshing dashboard stats...");
+      mainContent.innerHTML = renderDashboard();
+    }
+  });
 }
