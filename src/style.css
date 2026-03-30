@@ -1635,25 +1635,24 @@ tbody tr:last-child td {
   }
 
   .stat-card {
-    padding: var(--space-md) var(--space-sm);
     flex-direction: column;
-    justify-content: center;
     text-align: center;
-    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-sm);
+    gap: var(--space-xs);
   }
 
   .stat-icon {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     font-size: 1.2rem;
   }
 
   .stat-info h3 {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
   }
 
   .stat-info .stat-value {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
 
   .quick-actions {
@@ -1664,19 +1663,27 @@ tbody tr:last-child td {
   .table-container {
     margin: 0 calc(-1 * var(--space-md));
     padding: 0 var(--space-md);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   table {
     min-width: 100%;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
 
   th,
   td {
-    padding: var(--space-sm) var(--space-sm);
+    padding: var(--space-sm) var(--space-xs);
     white-space: nowrap;
+  }
+
+  .sale-info {
+    min-width: 0;
+  }
+
+  .sale-details h4 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* Sell Page Optimizations */
@@ -2042,8 +2049,6 @@ tbody tr:last-child td {
   display: flex;
   gap: var(--space-md);
   align-items: center;
-  min-width: 0;
-  flex: 1;
 }
 
 .sale-number {
@@ -2052,29 +2057,17 @@ tbody tr:last-child td {
   background: var(--bg-hover);
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-
-.sale-details {
-  min-width: 0;
-  flex: 1;
 }
 
 .sale-details h4 {
   margin: 0 0 4px 0;
   font-size: 1rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .sale-details p {
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .btn-clear-sale,

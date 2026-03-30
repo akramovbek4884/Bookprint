@@ -41,7 +41,10 @@ export function renderSell() {
           </div>
 
           <div class="card recent-products">
-            <h3 style="margin-bottom: var(--space-md); font-size: 0.95rem; color: var(--text-secondary);">📦 Mahsulotlar ro'yxati</h3>
+            <h3 style="margin-bottom: var(--space-md); font-size: 0.95rem; color: var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+              <span>📦 Katalog</span>
+              <input type="text" id="product-search-input" class="input" placeholder="🔍 Nomi bilan qidirish..." style="max-width: 180px; padding: 6px 10px; font-size:0.85rem;" autocomplete="off" />
+            </h3>
             <div id="product-list">
               ${products.map(p => {
     const isLow = p.stock < 10;
@@ -406,9 +409,14 @@ export function initSell() {
 
   function refreshProductListUI() {
     const productList = document.getElementById('product-list');
+    const searchInput = document.getElementById('product-search-input');
+    const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
     if (productList) {
       const updatedProducts = getProducts();
-      productList.innerHTML = updatedProducts.map(p => {
+      const filtered = term ? updatedProducts.filter(p => p.name.toLowerCase().includes(term) || p.barcode.includes(term)) : updatedProducts;
+
+      productList.innerHTML = filtered.map(p => {
         const isLow = p.stock < 10;
         const isOut = p.stock <= 0;
         return `
@@ -422,6 +430,12 @@ export function initSell() {
       }).join('');
       attachQuickCardListeners();
     }
+  }
+
+  // Product Search Listener
+  const productSearchInput = document.getElementById('product-search-input');
+  if (productSearchInput) {
+    productSearchInput.addEventListener('input', refreshProductListUI);
   }
 
   // Clear cart
