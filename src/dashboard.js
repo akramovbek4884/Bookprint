@@ -1,7 +1,7 @@
 // ========================================
 // Dashboard Page
 // ========================================
-import { getSales, getDailySummary, getTodayStr, formatPrice, formatTime } from './store.js';
+import { getSales, getDailySummary, getTodayStr, formatPrice, formatTime, deleteSale } from './store.js';
 import { showReceipt } from './sell.js';
 
 export function renderDashboard() {
@@ -137,16 +137,17 @@ function attachDashboardEvents() {
   });
 
   document.querySelectorAll('.btn-clear-sale').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = String(btn.dataset.id);
       if (id && id !== "undefined" && id !== "null") {
-        const hidden = JSON.parse(localStorage.getItem('hiddenSales') || '[]').map(String);
-        if (!hidden.includes(id)) {
-          hidden.push(id);
-          localStorage.setItem('hiddenSales', JSON.stringify(hidden));
-
-          window.dispatchEvent(new CustomEvent('store-updated'));
+        if (confirm("Bu savdoni ma'lumotlar bazasidan butunlay o'chirasizmi?")) {
+          const res = await deleteSale(id);
+          if (res.success) {
+            window.dispatchEvent(new CustomEvent('store-updated'));
+          } else {
+            alert(res.error || "O'chirishda xatolik yuz berdi");
+          }
         }
       }
     });

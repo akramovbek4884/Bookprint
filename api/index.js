@@ -15,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bookprint_fallback_secret_change_me';
+let globalDataUpdated = new Date().toISOString();
 
 async function initDb() {
     try {
@@ -87,10 +88,18 @@ function authenticate(req, res, next) {
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: "Ruhsat yo'q (Token topilmadi)" });
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, async (err, user) => {
         if (err) return res.status(403).json({ error: 'Token yaroqsiz' });
-        req.user = user;
-        next();
+        try {
+            const result = await db.query('SELECT role FROM users WHERE id = $1', [user.id]);
+            if (result.rowCount === 0) {
+                return res.status(401).json({ error: 'Foydalanuvchi tizimdan o\'chirilgan' });
+            }
+            req.user = { id: user.id, username: user.username, role: result.rows[0].role };
+            next();
+        } catch (dbErr) {
+            res.status(500).json({ error: dbErr.message });
+        }
     });
 }
 
@@ -169,6 +178,25 @@ app.delete('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
     }
 });
 
+app.put('/api/users/password', authenticate, async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword || newPassword.length < 4) {
+        return res.status(400).json({ error: "Yangi parol 4 belgidan kam bo'lmasligi kerak" });
+    }
+    try {
+        const result = await db.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
+        if (result.rowCount === 0) return res.status(401).json({ error: "Foydalanuvchi topilmadi" });
+        if (!bcrypt.compareSync(oldPassword, result.rows[0].password_hash)) {
+            return res.status(400).json({ error: "Eski parol noto'g'ri" });
+        }
+        const hash = bcrypt.hashSync(newPassword, 8);
+        await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.user.id]);
+        res.json({ message: "Parol muvaffaqiyatli o'zgartirildi" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- PRODUCTS API (Protected) ---
 app.get('/api/products', authenticate, async (req, res) => {
     try {
@@ -179,28 +207,37 @@ app.get('/api/products', authenticate, async (req, res) => {
     }
 });
 
-app.post('/api/products', authenticate, async (req, res) => {
+app.post('/api/products', authenticate, requireAdmin, async (req, res) => {
     const { barcode, name, price, cost_price, stock, category } = req.body;
     if (!barcode || !name || price == null || stock == null) {
         return res.status(400).json({ error: "Barcha maydonlar to'ldirilishi shart" });
+    }
+    if (price < 0 || stock < 0 || (cost_price && cost_price < 0)) {
+        return res.status(400).json({ error: "Manfiy son kiritish taqiqlangan" });
     }
 
     try {
         const sql = 'INSERT INTO products (barcode, name, price, cost_price, stock, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id';
         const result = await db.query(sql, [barcode, name, price, cost_price || 0, stock, category || 'Unclassified']);
+        globalDataUpdated = new Date().toISOString();
         res.json({ id: result.rows[0].id, barcode, name, price, cost_price, stock, category });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.put('/api/products/:id', authenticate, async (req, res) => {
+app.put('/api/products/:id', authenticate, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { barcode, name, price, cost_price, stock, category } = req.body;
+
+    if (price < 0 || stock < 0 || (cost_price && cost_price < 0)) {
+        return res.status(400).json({ error: "Manfiy son kiritish taqiqlangan" });
+    }
 
     try {
         const sql = 'UPDATE products SET barcode = $1, name = $2, price = $3, cost_price = $4, stock = $5, category = $6 WHERE id = $7';
         await db.query(sql, [barcode, name, price, cost_price || 0, stock, category, id]);
+        globalDataUpdated = new Date().toISOString();
         res.json({ id, barcode, name, price, cost_price, stock, category });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -211,6 +248,7 @@ app.delete('/api/products/:id', authenticate, requireAdmin, async (req, res) => 
     const { id } = req.params;
     try {
         await db.query('DELETE FROM products WHERE id = $1', [id]);
+        globalDataUpdated = new Date().toISOString();
         res.json({ message: 'Deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -218,10 +256,9 @@ app.delete('/api/products/:id', authenticate, requireAdmin, async (req, res) => 
 });
 
 app.post('/api/sales', authenticate, async (req, res) => {
-    const { total, items } = req.body;
+    const { items } = req.body;
     let receiptno = req.body.receiptno || req.body.receiptNo;
 
-    // Generate a default receipt number if missing
     if (!receiptno) {
         receiptno = `BP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     }
@@ -229,20 +266,66 @@ app.post('/api/sales', authenticate, async (req, res) => {
     const date = new Date().toISOString();
     const user_id = req.user.id;
 
+    if (!items || items.length === 0) {
+        return res.status(400).json({ error: "Sotish uchun mahsulotlar yo'q" });
+    }
+
     const client = await db.pool.connect();
     try {
         await client.query('BEGIN');
 
+        let calculatedTotal = 0;
+        const processedItems = [];
+
+        // Validate stock and calculate real total
+        for (const item of items) {
+            if (item.id) {
+                const prodResult = await client.query('SELECT name, barcode, price, stock FROM products WHERE id = $1 FOR UPDATE', [item.id]);
+                if (prodResult.rowCount === 0) {
+                    throw new Error(`${item.name || item.barcode || 'Mahsulot'} bazada topilmadi.`);
+                }
+                const dbProduct = prodResult.rows[0];
+                if (dbProduct.stock < item.qty) {
+                    throw new Error(`${dbProduct.name} - yetarli emas (Bazada qiymati: ${dbProduct.stock} ta).`);
+                }
+
+                const dbPrice = dbProduct.price;
+                const dbSubtotal = dbPrice * item.qty;
+                calculatedTotal += dbSubtotal;
+
+                processedItems.push({
+                    id: item.id,
+                    name: dbProduct.name,
+                    barcode: dbProduct.barcode,
+                    qty: item.qty,
+                    price: dbPrice,
+                    subtotal: dbSubtotal
+                });
+            } else {
+                const customPrice = item.price || 0;
+                const customSubtotal = customPrice * item.qty;
+                calculatedTotal += customSubtotal;
+                processedItems.push({
+                    id: null,
+                    name: item.name || 'Noma\'lum',
+                    barcode: item.barcode || '',
+                    qty: item.qty,
+                    price: customPrice,
+                    subtotal: customSubtotal
+                });
+            }
+        }
+
         const saleResult = await client.query(
             'INSERT INTO sales (receiptno, total, date, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
-            [receiptno, total, date, user_id]
+            [receiptno, calculatedTotal, date, user_id]
         );
         const saleId = saleResult.rows[0].id;
 
-        for (const item of items) {
+        for (const item of processedItems) {
             await client.query(
                 'INSERT INTO sale_items (sale_id, product_id, name, barcode, qty, price, subtotal) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                [saleId, item.id || null, item.name || '', item.barcode || '', item.qty, item.price, item.subtotal]
+                [saleId, item.id, item.name, item.barcode, item.qty, item.price, item.subtotal]
             );
             if (item.id) {
                 await client.query(
@@ -253,10 +336,11 @@ app.post('/api/sales', authenticate, async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ success: true, saleId });
+        globalDataUpdated = new Date().toISOString();
+        res.json({ success: true, saleId, calculatedTotal, items: processedItems });
     } catch (err) {
         await client.query('ROLLBACK');
-        res.status(500).json({ error: err.message });
+        res.status(400).json({ error: err.message });
     } finally {
         client.release();
     }
@@ -287,6 +371,90 @@ app.get('/api/sales', authenticate, async (req, res) => {
         res.json(sales);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/sync', authenticate, async (req, res) => {
+    const { since } = req.query;
+    try {
+        let products = [];
+        if (!since || since < globalDataUpdated) {
+            const prodRes = await db.query('SELECT * FROM products ORDER BY id DESC');
+            products = prodRes.rows;
+        }
+
+        let sales = [];
+        if (since) {
+            const salesResult = await db.query('SELECT * FROM sales WHERE date > $1 ORDER BY id DESC LIMIT 200', [since]);
+            if (salesResult.rows.length > 0) {
+                const saleIds = salesResult.rows.map(s => s.id);
+                const itemsResult = await db.query(`
+                    SELECT si.*, p.name AS product_name, p.barcode AS product_barcode
+                    FROM sale_items si
+                    LEFT JOIN products p ON si.product_id = p.id
+                    WHERE si.sale_id = ANY($1)
+                `, [saleIds]);
+
+                sales = salesResult.rows.map(sale => {
+                    return {
+                        ...sale,
+                        items: itemsResult.rows
+                            .filter(item => item.sale_id === sale.id)
+                            .map(item => ({
+                                ...item,
+                                name: item.name || item.product_name || 'Noma\'lum',
+                                barcode: item.barcode || item.product_barcode || ''
+                            }))
+                    };
+                });
+            }
+        }
+        res.json({ products, newSales: sales });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/sales/:id', authenticate, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM sale_items WHERE sale_id = $1', [id]);
+        await client.query('DELETE FROM sales WHERE id = $1', [id]);
+        await client.query('COMMIT');
+        globalDataUpdated = new Date().toISOString();
+        res.json({ success: true, message: "Sotuv o'chirildi" });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+app.delete('/api/sales/date/:date', authenticate, requireAdmin, async (req, res) => {
+    const { date } = req.params;
+    const client = await db.pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const salesResult = await client.query('SELECT id FROM sales WHERE date LIKE $1 OR date LIKE $2', [`${date}%`, `${date} %`]);
+        const saleIds = salesResult.rows.map(r => r.id);
+
+        if (saleIds.length > 0) {
+            await client.query('DELETE FROM sale_items WHERE sale_id = ANY($1)', [saleIds]);
+            await client.query('DELETE FROM sales WHERE id = ANY($1)', [saleIds]);
+        }
+
+        await client.query('COMMIT');
+        globalDataUpdated = new Date().toISOString();
+        res.json({ success: true, message: "Kunlik savdolar o'chirildi" });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
     }
 });
 

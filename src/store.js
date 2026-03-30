@@ -7,6 +7,7 @@ const API_URL = '/api';
 let memoryProducts = [];
 let memorySales = [];
 let isInitialized = false;
+let lastSyncTime = null;
 
 function getAuthHeaders() {
     return {
@@ -44,6 +45,7 @@ export async function initStore() {
             });
 
             isInitialized = true;
+            lastSyncTime = new Date().toISOString();
             console.log("Memory Store synced with Backend");
             return true;
         } else {
@@ -52,6 +54,46 @@ export async function initStore() {
         }
     } catch (err) {
         console.error("Connection error:", err);
+        return false;
+    }
+}
+
+export async function syncStore() {
+    if (!lastSyncTime || !isInitialized) return await initStore();
+
+    try {
+        const headers = getAuthHeaders();
+        const res = await fetch(`${API_URL}/sync?since=${encodeURIComponent(lastSyncTime)}`, { headers });
+        if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('kmarket_token');
+            localStorage.removeItem('kmarket_user');
+            window.location.hash = '#/login';
+            return false;
+        }
+        if (res.ok) {
+            const data = await res.json();
+            if (data.products && data.products.length > 0) {
+                memoryProducts = data.products;
+            }
+            if (data.newSales && data.newSales.length > 0) {
+                data.newSales.forEach(s => {
+                    if (typeof s.items === 'string') {
+                        try { s.items = JSON.parse(s.items); } catch (e) { s.items = []; }
+                    }
+                    if (!Array.isArray(s.items)) s.items = [];
+
+                    if (!memorySales.find(ms => ms.id === s.id)) {
+                        memorySales.push(s);
+                    }
+                });
+                memorySales.sort((a, b) => b.id - a.id);
+            }
+            lastSyncTime = new Date().toISOString();
+            console.log("Store synced delta.");
+            return true;
+        }
+    } catch (err) {
+        console.error("Sync error:", err);
         return false;
     }
 }
@@ -150,7 +192,7 @@ export function getSales() {
     const hiddenSales = JSON.parse(localStorage.getItem('hiddenSales') || '[]').map(String);
     const hiddenDays = JSON.parse(localStorage.getItem('hiddenDays') || '[]');
     return memorySales.filter(s => {
-        const d = (s.date || s.timestamp).slice(0, 10);
+        const d = getLocalYMD(new Date(s.date || s.timestamp));
         return !hiddenSales.includes(String(s.id)) && !hiddenDays.includes(d);
     });
 }
@@ -174,16 +216,56 @@ export async function saveSale(sale) {
         const finalSale = {
             ...sale,
             id: result.saleId,
+            total: result.calculatedTotal !== undefined ? result.calculatedTotal : sale.total,
+            items: result.items || sale.items,
             timestamp: new Date().toISOString()
         };
         memorySales.unshift(finalSale);
 
         // Sync products stock from server after sale to ensure consistency
-        await initStore();
+        await syncStore();
 
         return { success: true, sale: finalSale };
     } catch (err) {
         console.error("Save Sale Error:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+export async function deleteSale(id) {
+    if (!id) return { success: false, error: "Savdo ID si topilmadi" };
+    try {
+        const res = await fetch(`${API_URL}/sales/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "O'chirishda xatolik yuz berdi");
+        }
+        memorySales = memorySales.filter(s => String(s.id) !== String(id));
+        return { success: true };
+    } catch (err) {
+        console.error("Delete Sale Error:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+export async function deleteSalesByDate(dateStr) {
+    if (!dateStr) return { success: false, error: "Sana kiritilmadi" };
+    try {
+        const res = await fetch(`${API_URL}/sales/date/${dateStr}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "O'chirishda xatolik yuz berdi");
+        }
+        memorySales = memorySales.filter(s => !(s.date || s.timestamp).startsWith(dateStr));
+        return { success: true };
+    } catch (err) {
+        console.error("Delete Sales Date Error:", err);
         return { success: false, error: err.message };
     }
 }
@@ -209,20 +291,27 @@ export function formatDateTime(dateStr) {
     return formatDate(dateStr) + ' ' + formatTime(dateStr);
 }
 
+export function getLocalYMD(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
 export function getTodayStr() {
-    return new Date().toISOString().slice(0, 10);
+    return getLocalYMD(new Date());
 }
 
 export function getCurrentMonthStr() {
-    return new Date().toISOString().slice(0, 7);
+    return getLocalYMD(new Date()).slice(0, 7);
 }
 
 export function getSalesByDate(dateStr) {
-    return getSales().filter(s => (s.date || s.timestamp).startsWith(dateStr));
+    return getSales().filter(s => getLocalYMD(new Date(s.date || s.timestamp)) === dateStr);
 }
 
 export function getSalesByMonth(monthStr) {
-    return getSales().filter(s => (s.date || s.timestamp).startsWith(monthStr));
+    return getSales().filter(s => getLocalYMD(new Date(s.date || s.timestamp)).startsWith(monthStr));
 }
 
 export function getDailySummary(dateStr) {
@@ -236,7 +325,7 @@ export function getMonthlySummary(monthStr) {
 
     const dailyMap = {};
     sales.forEach(s => {
-        const day = (s.date || s.timestamp).slice(0, 10);
+        const day = getLocalYMD(new Date(s.date || s.timestamp));
         if (!dailyMap[day]) dailyMap[day] = { revenue: 0, count: 0 };
         dailyMap[day].revenue += s.total;
         dailyMap[day].count += 1;
@@ -299,7 +388,7 @@ export function startPolling(intervalMs = 15000) {
         // Only poll if the user is logged in
         if (localStorage.getItem('kmarket_token')) {
             console.log("Polling for updates...");
-            await initStore();
+            await syncStore();
 
             // Trigger a custom event so the UI can refresh if needed
             window.dispatchEvent(new CustomEvent('store-updated'));

@@ -1,8 +1,7 @@
 // ========================================
 // Monthly Report Page
 // ========================================
-import { getMonthlySummary, getCurrentMonthStr, formatPrice } from './store.js';
-import { exportToCSV } from './utils.js';
+import { getMonthlySummary, getCurrentMonthStr, formatPrice, deleteSalesByDate } from './store.js';
 import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
@@ -203,15 +202,17 @@ function loadMonthlyData(monthStr) {
 
   // Click listeners for clearing
   document.querySelectorAll('.btn-clear-day').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const day = String(btn.dataset.day);
       if (day && day !== "undefined" && day !== "null") {
-        const hidden = JSON.parse(localStorage.getItem('hiddenDays') || '[]').map(String);
-        if (!hidden.includes(day)) {
-          hidden.push(day);
-          localStorage.setItem('hiddenDays', JSON.stringify(hidden));
-          window.dispatchEvent(new CustomEvent('store-updated'));
+        if (confirm("Bu kundagi barcha savdolarni ma'lumotlar bazasidan butunlay o'chirasizmi?")) {
+          const res = await deleteSalesByDate(day);
+          if (res.success) {
+            window.dispatchEvent(new CustomEvent('store-updated'));
+          } else {
+            alert(res.error || "O'chirishda xatolik yuz berdi");
+          }
         }
       }
     });

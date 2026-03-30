@@ -143,6 +143,49 @@ document.getElementById('logout-btn')?.addEventListener('click', () => {
   window.location.reload();
 });
 
+// ---- Password Change Logic ----
+document.getElementById('sidebar-password-btn')?.addEventListener('click', () => {
+  const mo = document.getElementById('password-modal');
+  if (mo) {
+    document.getElementById('pass-old').value = '';
+    document.getElementById('pass-new').value = '';
+    document.getElementById('pass-confirm').value = '';
+    mo.classList.remove('hidden');
+  }
+});
+
+document.getElementById('pass-close-btn')?.addEventListener('click', () => {
+  document.getElementById('password-modal')?.classList.add('hidden');
+});
+
+document.getElementById('pass-save-btn')?.addEventListener('click', async () => {
+  const oldP = document.getElementById('pass-old').value;
+  const newP = document.getElementById('pass-new').value;
+  const confP = document.getElementById('pass-confirm').value;
+
+  if (!oldP || !newP) return alert("Barcha maydonlarni to'ldiring");
+  if (newP !== confP) return alert("Yangi parol va tasdiqlash paroli bir xil emas");
+  if (newP.length < 4) return alert("Yangi parol kamida 4 belgi bo'lishi kerak");
+
+  try {
+    const token = localStorage.getItem('kmarket_token');
+    const res = await fetch('/api/users/password', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ oldPassword: oldP, newPassword: newP })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert("Parolingiz muvaffaqiyatli o'zgartirildi! Xavfsizlik uchun qayta kiring.");
+      document.getElementById('logout-btn').click();
+    } else {
+      alert(data.error || "Xatolik yuz berdi");
+    }
+  } catch (e) {
+    alert("Tarmoq xatosi yoki server ishlamayapti");
+  }
+});
+
 // ---- Mobile Menu Logic ----
 function initMobileMenu() {
   const hamburger = document.getElementById('hamburger');

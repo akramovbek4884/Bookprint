@@ -69,8 +69,10 @@
       </nav>
       <div class="sidebar-footer">
         <div class="clock" id="sidebar-clock"></div>
+        <button id="sidebar-password-btn" class="btn btn-secondary"
+          style="width: 100%; margin-top: 15px; font-size: 0.85rem; padding: 10px; gap: 8px;">🔑 Parolni o'zgartirish</button>
         <button id="sidebar-refresh-btn" class="btn btn-primary"
-          style="width: 100%; margin-top: 15px; font-size: 0.85rem; padding: 10px; gap: 8px;">🔄 Ma'lumotlarni
+          style="width: 100%; margin-top: 8px; font-size: 0.85rem; padding: 10px; gap: 8px;">🔄 Ma'lumotlarni
           yangilash</button>
         <button id="logout-btn" class="btn btn-secondary"
           style="width: 100%; margin-top: 8px; font-size: 0.8rem; padding: 8px;">🚪 Chiqish</button>
@@ -89,6 +91,29 @@
       <div class="receipt-actions">
         <button id="receipt-print-btn" class="btn btn-primary">🖨️ Chop etish</button>
         <button id="receipt-close-btn" class="btn btn-secondary">✖ Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Change Modal -->
+  <div id="password-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 400px; width: 90%;">
+      <h3>Parolni o'zgartirish</h3>
+      <div class="input-group" style="margin-top: 15px;">
+        <label>Eski parol</label>
+        <input type="password" id="pass-old" class="input" placeholder="Eski parolingiz" />
+      </div>
+      <div class="input-group">
+        <label>Yangi parol (kamida 4 belgi)</label>
+        <input type="password" id="pass-new" class="input" placeholder="Yangi parol" />
+      </div>
+      <div class="input-group">
+        <label>Yangi parolni tasdiqlash</label>
+        <input type="password" id="pass-confirm" class="input" placeholder="Yangi parolni qayta kiriting" />
+      </div>
+      <div class="receipt-actions" style="margin-top: 20px;">
+        <button id="pass-save-btn" class="btn btn-primary">Saqlash</button>
+        <button id="pass-close-btn" class="btn btn-secondary">Bekor qilish</button>
       </div>
     </div>
   </div>
