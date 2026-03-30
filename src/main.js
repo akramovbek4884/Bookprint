@@ -2,7 +2,7 @@
 // Main Entry — Router & Clock
 // ========================================
 import './style.css';
-import { initStore, startPolling, stopPolling } from './store.js';
+import { initStore, startPolling, stopPolling, syncStore } from './store.js';
 import { renderDashboard, initDashboard } from './dashboard.js';
 import { renderSell, initSell } from './sell.js';
 import { renderProducts, initProducts } from './products.js';
@@ -100,11 +100,17 @@ initStore().then((success) => {
 });
 
 // ---- Synchronization Logic ----
-async function syncStore(btn = null) {
-  if (btn) btn.classList.add('refreshing');
+async function triggerSync(btn = null) {
+  let origHtml = '';
+  if (btn) {
+    origHtml = btn.innerHTML;
+    btn.innerHTML = '⏳ Yuklanmoqda...';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+  }
 
   console.log("Syncing store...");
-  const success = await initStore();
+  const success = await syncStore();
 
   if (success) {
     // Trigger surgical update on current page
@@ -112,19 +118,23 @@ async function syncStore(btn = null) {
   }
 
   if (btn) {
-    setTimeout(() => btn.classList.remove('refreshing'), 1000);
+    setTimeout(() => {
+      btn.innerHTML = origHtml;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }, 500);
   }
 }
 
 // 1. Manual Refresh logic
-document.getElementById('mobile-refresh-btn')?.addEventListener('click', (e) => syncStore(e.currentTarget));
-document.getElementById('sidebar-refresh-btn')?.addEventListener('click', (e) => syncStore(e.currentTarget));
+document.getElementById('mobile-refresh-btn')?.addEventListener('click', (e) => triggerSync(e.currentTarget));
+document.getElementById('sidebar-refresh-btn')?.addEventListener('click', (e) => triggerSync(e.currentTarget));
 
-// 2. Visibility-based sync (sync when user comes back to the tab)
+// 2. Visibility-based sync
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     console.log("Tab focused, triggering sync...");
-    syncStore();
+    triggerSync();
   }
 });
 
