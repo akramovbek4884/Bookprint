@@ -75,6 +75,14 @@ async function initDb() {
             console.error("Constraint migration error:", e.message);
         }
 
+        // Fix foreign key constraint for user deletion
+        try {
+            await db.query(`ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_user_id_fkey`);
+            await db.query(`ALTER TABLE sales ADD CONSTRAINT sales_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL`);
+        } catch (e) {
+            console.error("User constraint migration error:", e.message);
+        }
+
         console.log('Database tables verified/created.');
     } catch (err) {
         console.error('Database initialization error:', err);
