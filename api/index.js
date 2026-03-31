@@ -83,6 +83,13 @@ async function initDb() {
             console.error("User constraint migration error:", e.message);
         }
 
+        // Allow duplicate barcodes
+        try {
+            await db.query(`ALTER TABLE products DROP CONSTRAINT IF EXISTS products_barcode_key`);
+        } catch (e) {
+            console.error("Barcode constraint migration error:", e.message);
+        }
+
         console.log('Database tables verified/created.');
     } catch (err) {
         console.error('Database initialization error:', err);

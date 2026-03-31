@@ -107,6 +107,10 @@ export function findProductByBarcode(barcode) {
     return memoryProducts.find(p => p.barcode === barcode) || null;
 }
 
+export function findProductsByBarcode(barcode) {
+    return memoryProducts.filter(p => p.barcode === barcode);
+}
+
 export function searchProducts(query) {
     const q = query.toLowerCase();
     return memoryProducts.filter(p =>

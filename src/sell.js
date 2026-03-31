@@ -1,7 +1,7 @@
 // ========================================
 // Sell Page — POS Interface
 // ========================================
-import { findProductByBarcode, getProducts, saveSale, formatPrice } from './store.js';
+import { findProductByBarcode, findProductsByBarcode, getProducts, saveSale, formatPrice } from './store.js';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { playScanSound } from './utils.js';
 
@@ -50,7 +50,7 @@ export function renderSell() {
     const isLow = p.stock < 10;
     const isOut = p.stock <= 0;
     return `
-                        <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-barcode="${p.barcode}">
+                        <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-id="${p.id}">
                             <div class="pq-name">${p.name}</div>
                             <div class="pq-price">${formatPrice(p.price)}</div>
                             <div class="pq-stock ${isLow ? 'low' : ''}">${p.stock} ta</div>
@@ -94,6 +94,18 @@ export function renderSell() {
         <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin-top: 15px;">
           Shtrix-kod yoki QR-kodni kamera qarshisiga tuting
         </p>
+      </div>
+    </div>
+
+    <!-- Multi Product Modal -->
+    <div id="multi-product-modal" class="modal-overlay hidden">
+      <div class="modal-content" style="max-width: 500px; width: 95%;">
+        <h3 style="margin-bottom: var(--space-md);">Aynan qaysi mahsulot?</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 15px; font-size:0.9rem;">Ushbu shtrix-kod ostida bir nechta mahsulot topildi:</p>
+        <div id="multi-product-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; padding-right:5px;"></div>
+        <div class="form-actions" style="margin-top: 20px;">
+          <button class="btn btn-secondary" id="close-multi-modal" style="width:100%">Bekor qilish</button>
+        </div>
       </div>
     </div>
   `;
@@ -144,8 +156,62 @@ function updateCartUI() {
   attachCartEventListeners();
 }
 
+function showMultiProductModal(products) {
+  const modal = document.getElementById('multi-product-modal');
+  const listEl = document.getElementById('multi-product-list');
+  if (!modal || !listEl) return;
+
+  listEl.innerHTML = products.map(p => `
+    <div class="product-quick-card" style="width:100%; border: 1px solid var(--border-color); cursor:pointer; padding: 10px; border-radius: 8px; background: var(--bg-card);" data-id="${p.id}">
+      <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+        <strong style="font-size:1rem;">${p.name}</strong>
+        <span style="color:var(--accent-success); font-weight:bold;">${formatPrice(p.price)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-secondary);">
+        <span>Kategoriya: ${p.category || 'Noma\'lum'}</span>
+        <span style="${p.stock < 10 ? 'color:var(--accent-danger)' : ''}">Ombor: ${p.stock} ta</span>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.product-quick-card').forEach(card => {
+    card.onclick = () => {
+      const id = parseInt(card.dataset.id);
+      const product = products.find(p => p.id === id);
+      if (product) {
+        handleProductSelection(product);
+        modal.classList.add('hidden');
+      }
+    };
+  });
+
+  modal.classList.remove('hidden');
+  document.getElementById('close-multi-modal').onclick = () => modal.classList.add('hidden');
+}
+
+function handleProductSelection(product) {
+  const feedback = document.getElementById('barcode-feedback');
+  const inCart = cart.find(item => item.id === product.id);
+  const currentQtyInCart = inCart ? inCart.qty : 0;
+
+  if (product.stock <= currentQtyInCart) {
+    if (feedback) {
+      feedback.innerHTML = `<span style="color: var(--accent-danger);">⚠️ Ombor yetarli emas: ${product.stock} ta qolgan</span>`;
+      setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
+    }
+    return;
+  }
+
+  addToCart(product);
+  playScanSound();
+  if (feedback) {
+    feedback.innerHTML = `<span style="color: var(--accent-success);">✅ ${product.name} — ${formatPrice(product.price)}</span>`;
+    setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
+  }
+}
+
 function addToCart(product) {
-  const existing = cart.find(item => item.barcode === product.barcode);
+  const existing = cart.find(item => item.id === product.id);
   if (existing) {
     existing.qty += 1;
   } else {
@@ -173,7 +239,7 @@ function attachCartEventListeners() {
       e.stopPropagation();
       const idx = parseInt(btn.dataset.index);
       const item = cart[idx];
-      const product = findProductByBarcode(item.barcode);
+      const product = getProducts().find(p => p.id === item.id);
 
       if (product && product.stock <= item.qty) {
         const feedback = document.getElementById('barcode-feedback');
@@ -200,34 +266,22 @@ function attachCartEventListeners() {
 }
 
 function onScanSuccess(decodedText) {
-  playScanSound();
   const feedback = document.getElementById('barcode-feedback');
-  const product = findProductByBarcode(decodedText);
+  const products = findProductsByBarcode(decodedText);
 
-  if (product) {
-    // Check stock
-    const inCart = cart.find(item => item.barcode === decodedText);
-    const currentQtyInCart = inCart ? inCart.qty : 0;
-
-    if (product.stock <= currentQtyInCart) {
-      if (feedback) {
-        feedback.innerHTML = `<span style="color: var(--accent-danger);">⚠️ Ombor yetarli emas: ${product.stock} ta qolgan</span>`;
-        setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
-      }
-      return;
-    }
-
-    addToCart(product);
-    if (feedback) {
-      feedback.innerHTML = `<span style="color: var(--accent-success);">✅ ${product.name} — ${formatPrice(product.price)}</span>`;
-    }
+  if (products.length === 1) {
+    handleProductSelection(products[0]);
+    stopScanner();
+  } else if (products.length > 1) {
+    playScanSound();
+    showMultiProductModal(products);
     stopScanner();
   } else {
     if (feedback) {
       feedback.innerHTML = `<span style="color: var(--accent-danger);">❌ Mahsulot topilmadi: ${decodedText}</span>`;
+      setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
     }
   }
-  setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
 }
 
 function startScanner() {
@@ -293,28 +347,20 @@ export function initSell() {
         const code = barcodeInput.value.trim();
         if (!code) return;
 
-        const product = findProductByBarcode(code);
-        if (product) {
-          // Check stock
-          const inCart = cart.find(item => item.barcode === code);
-          const currentQtyInCart = inCart ? inCart.qty : 0;
-
-          if (product.stock <= currentQtyInCart) {
-            feedback.innerHTML = `<span style="color: var(--accent-danger);">⚠️ Ombor yetarli emas: ${product.stock} ta qolgan</span>`;
-            barcodeInput.value = '';
-            setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
-            return;
-          }
-
-          addToCart(product);
+        const products = findProductsByBarcode(code);
+        if (products.length === 1) {
+          handleProductSelection(products[0]);
+        } else if (products.length > 1) {
           playScanSound();
-          feedback.innerHTML = `<span style="color: var(--accent-success);">✅ ${product.name} — ${formatPrice(product.price)}</span>`;
-          barcodeInput.value = '';
+          showMultiProductModal(products);
         } else {
-          feedback.innerHTML = `<span style="color: var(--accent-danger);">❌ Mahsulot topilmadi: ${code}</span>`;
+          if (feedback) {
+            feedback.innerHTML = `<span style="color: var(--accent-danger);">❌ Mahsulot topilmadi: ${code}</span>`;
+            setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
+          }
         }
 
-        setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
+        barcodeInput.value = '';
         barcodeInput.focus();
       }
     });
@@ -332,26 +378,10 @@ export function initSell() {
   // Product quick cards
   document.querySelectorAll('.product-quick-card').forEach(card => {
     card.addEventListener('click', () => {
-      const barcode = card.dataset.barcode;
-      const product = findProductByBarcode(barcode);
+      const id = parseInt(card.dataset.id);
+      const product = getProducts().find(p => p.id === id);
       if (product) {
-        // Check stock
-        const inCart = cart.find(item => item.barcode === barcode);
-        const currentQtyInCart = inCart ? inCart.qty : 0;
-
-        if (product.stock <= currentQtyInCart) {
-          if (feedback) {
-            feedback.innerHTML = `<span style="color: var(--accent-danger);">⚠️ Ombor yetarli emas: ${product.stock} ta qolgan</span>`;
-            setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
-          }
-          return;
-        }
-
-        addToCart(product);
-        if (feedback) {
-          feedback.innerHTML = `<span style="color: var(--accent-success);">✅ ${product.name} qo'shildi</span>`;
-          setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 2000);
-        }
+        handleProductSelection(product);
       }
     });
   });
@@ -420,7 +450,7 @@ export function initSell() {
         const isLow = p.stock < 10;
         const isOut = p.stock <= 0;
         return `
-          <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-barcode="${p.barcode}">
+          <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-id="${p.id}">
             <div class="pq-name">${p.name}</div>
             <div class="pq-price">${formatPrice(p.price)}</div>
             <div class="pq-stock ${isLow ? 'low' : ''}">${p.stock} ta</div>
@@ -458,26 +488,10 @@ function attachQuickCardListeners() {
   const feedback = document.getElementById('barcode-feedback');
   document.querySelectorAll('.product-quick-card').forEach(card => {
     card.onclick = () => {
-      const barcode = card.dataset.barcode;
-      const product = findProductByBarcode(barcode);
+      const id = parseInt(card.dataset.id);
+      const product = getProducts().find(p => p.id === id);
       if (product) {
-        // Check stock
-        const inCart = cart.find(item => item.barcode === barcode);
-        const currentQtyInCart = inCart ? inCart.qty : 0;
-
-        if (product.stock <= currentQtyInCart) {
-          if (feedback) {
-            feedback.innerHTML = `<span style="color: var(--accent-danger);">⚠️ Ombor yetarli emas: ${product.stock} ta qolgan</span>`;
-            setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 3000);
-          }
-          return;
-        }
-
-        addToCart(product);
-        if (feedback) {
-          feedback.innerHTML = `<span style="color: var(--accent-success);">✅ ${product.name} qo'shildi</span>`;
-          setTimeout(() => { if (feedback) feedback.innerHTML = ''; }, 2000);
-        }
+        handleProductSelection(product);
       }
     };
   });

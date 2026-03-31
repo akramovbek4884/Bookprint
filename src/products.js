@@ -141,8 +141,8 @@ function renderProductRows(products) {
         <td class="text-center"><span class="badge ${stockBadge}">${p.stock} ta</span></td>
         ${isAdmin ? `
         <td class="text-center">
-          <button class="btn btn-sm btn-secondary edit-product-btn" data-barcode="${p.barcode}" title="Tahrirlash">✏️</button>
-          <button class="btn btn-sm btn-danger delete-product-btn" data-barcode="${p.barcode}" title="O'chirish">🗑️</button>
+          <button class="btn btn-sm btn-secondary edit-product-btn" data-id="${p.id}" title="Tahrirlash">✏️</button>
+          <button class="btn btn-sm btn-danger delete-product-btn" data-id="${p.id}" title="O'chirish">🗑️</button>
         </td>
         ` : ''}
       </tr>
@@ -155,7 +155,7 @@ export function initProducts() {
   const addBtn = document.getElementById('add-product-btn');
   const modal = document.getElementById('product-form-modal');
   const scannerModal = document.getElementById('product-scanner-modal');
-  let editingBarcode = null;
+  let editingId = null;
   let html5QrcodeScanner = null;
 
   function onScanSuccess(decodedText) {
@@ -214,7 +214,7 @@ export function initProducts() {
   // Add product
   if (addBtn) {
     addBtn.addEventListener('click', () => {
-      editingBarcode = null;
+      editingId = null;
       document.getElementById('product-form-title').textContent = '➕ Yangi mahsulot';
       const barcodeInput = document.getElementById('pf-barcode');
       if (barcodeInput) {
@@ -264,9 +264,8 @@ export function initProducts() {
     saveBtn.textContent = '⌛ Saqlanmoqda...';
 
     let result;
-    if (editingBarcode) {
-      const product = getProducts().find(p => p.barcode === editingBarcode);
-      result = await updateProduct(product?.id, { barcode, name, price, cost_price, stock, category });
+    if (editingId) {
+      result = await updateProduct(editingId, { barcode, name, price, cost_price, stock, category });
     } else {
       result = await addProduct({ barcode, name, price, cost_price, stock, category });
     }
@@ -324,12 +323,12 @@ export function initProducts() {
   function attachProductRowListeners() {
     document.querySelectorAll('.edit-product-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const barcode = btn.dataset.barcode;
+        const id = parseInt(btn.dataset.id);
         const products = getProducts();
-        const product = products.find(p => p.barcode === barcode);
+        const product = products.find(p => p.id === id);
         if (!product) return;
 
-        editingBarcode = barcode;
+        editingId = id;
         document.getElementById('product-form-title').textContent = '✏️ Mahsulotni tahrirlash';
         const barcodeInput = document.getElementById('pf-barcode');
         if (barcodeInput) {
@@ -347,8 +346,8 @@ export function initProducts() {
 
     document.querySelectorAll('.delete-product-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const barcode = btn.dataset.barcode;
-        const product = getProducts().find(p => p.barcode === barcode);
+        const id = parseInt(btn.dataset.id);
+        const product = getProducts().find(p => p.id === id);
         if (product) {
           deleteTargetId = product.id;
           deleteModal.classList.remove('hidden');
