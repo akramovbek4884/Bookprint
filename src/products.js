@@ -13,9 +13,17 @@ export function renderProducts() {
 
   return `
     <div class="page-enter">
-      <div class="page-header">
-        <h1 class="page-title">📦 Mahsulotlar</h1>
-        <p class="page-subtitle">Mahsulotlarni boshqarish — ${products.length} ta mahsulot</p>
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h1 class="page-title">📦 Mahsulotlar</h1>
+          <p class="page-subtitle">Mahsulotlarni boshqarish — ${products.length} ta mahsulot</p>
+        </div>
+        ${isAdmin ? `
+        <div style="background: var(--bg-card); border: 2px solid var(--accent-success); padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align:right;">
+          <div style="font-size:0.85rem; color:var(--text-secondary); text-transform:uppercase; font-weight:bold; letter-spacing:0.5px; margin-bottom:4px;">Kutilayotgan Tushum</div>
+          <h1 id="expected-revenue" style="margin:0; font-size:1.6rem; color:var(--accent-success);">${formatPrice(products.reduce((s, p) => s + (p.price * p.stock), 0))}</h1>
+        </div>
+        ` : ''}
       </div>
 
       <div class="search-bar">
@@ -360,6 +368,10 @@ export function initProducts() {
     const tbody = document.getElementById('products-tbody');
     if (!tbody) return; // Prevent execution on other pages if listener leaks
 
+    const userStr = localStorage.getItem('kmarket_user');
+    const user = userStr ? JSON.parse(userStr) : { role: 'cashier' };
+    const isAdmin = user.role === 'admin';
+
     const q = searchInput?.value.trim();
     const filtered = q ? searchProducts(q) : getProducts();
     if (tbody) tbody.innerHTML = renderProductRows(filtered);
@@ -367,6 +379,15 @@ export function initProducts() {
     // Update subtitle
     const subtitle = document.querySelector('.page-subtitle');
     if (subtitle) subtitle.textContent = `Mahsulotlarni boshqarish — ${getProducts().length} ta mahsulot`;
+
+    // Update Expected Revenue
+    if (isAdmin) {
+      const revEl = document.getElementById('expected-revenue');
+      if (revEl) {
+        const rev = filtered.reduce((sum, p) => sum + (p.price * p.stock), 0);
+        revEl.textContent = formatPrice(rev);
+      }
+    }
   }
 
   // Surgical refresh: update only the table when store data changes
