@@ -41,9 +41,9 @@ export function renderSell() {
           </div>
 
           <div class="card recent-products">
-            <h3 style="margin-bottom: var(--space-md); font-size: 0.95rem; color: var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin-bottom: var(--space-md); font-size: 0.95rem; color: var(--text-secondary); display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap: 10px;">
               <span>📦 Katalog</span>
-              <input type="text" id="product-search-input" class="input" placeholder="🔍 Nomi bilan qidirish..." style="max-width: 180px; padding: 6px 10px; font-size:0.85rem;" autocomplete="off" />
+              <input type="text" id="product-search-input" class="input" placeholder="🔍 Qidirish..." style="flex:1; min-width:140px; padding: 8px 12px; font-size:0.9rem;" autocomplete="off" />
             </h3>
             <div id="product-list">
               ${products.map(p => {
@@ -439,6 +439,8 @@ export function initSell() {
 
   function refreshProductListUI() {
     const productList = document.getElementById('product-list');
+    if (!productList) return; // Prevent memory leak cross-page execution
+
     const searchInput = document.getElementById('product-search-input');
     const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
 

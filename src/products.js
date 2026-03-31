@@ -358,6 +358,8 @@ export function initProducts() {
 
   function refreshProductTable() {
     const tbody = document.getElementById('products-tbody');
+    if (!tbody) return; // Prevent execution on other pages if listener leaks
+
     const q = searchInput?.value.trim();
     const filtered = q ? searchProducts(q) : getProducts();
     if (tbody) tbody.innerHTML = renderProductRows(filtered);
