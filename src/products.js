@@ -19,14 +19,14 @@ export function renderProducts() {
           <p class="page-subtitle">Mahsulotlarni boshqarish — ${products.length} ta mahsulot</p>
         </div>
         ${isAdmin ? `
-        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
-          <div style="background: var(--bg-card); border: 2px solid var(--border-color); padding: 10px 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align:right;">
-            <div style="font-size:0.8rem; color:var(--text-secondary); text-transform:uppercase; font-weight:bold; letter-spacing:0.5px; margin-bottom:4px;">Kutilayotgan Tushum</div>
-            <h1 id="expected-revenue" style="margin:0; font-size:1.4rem; color:var(--text-primary);">${formatPrice(products.reduce((s, p) => s + (p.price * p.stock), 0))}</h1>
+        <div class="revenue-widgets-container">
+          <div class="revenue-widget-card">
+            <div class="rw-label">Kutilayotgan Tushum</div>
+            <h1 id="expected-revenue" class="rw-value">${formatPrice(products.reduce((s, p) => s + (p.price * p.stock), 0))}</h1>
           </div>
-          <div style="background: var(--bg-card); border: 2px solid var(--accent-success); padding: 10px 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align:right;">
-            <div style="font-size:0.8rem; color:var(--text-secondary); text-transform:uppercase; font-weight:bold; letter-spacing:0.5px; margin-bottom:4px;">Kutilayotgan Sof Foyda</div>
-            <h1 id="expected-profit" style="margin:0; font-size:1.4rem; color:var(--accent-success);">${formatPrice(products.reduce((s, p) => s + ((p.price - (p.cost_price || 0)) * p.stock), 0))}</h1>
+          <div class="revenue-widget-card success">
+            <div class="rw-label">Kutilayotgan Sof Foyda</div>
+            <h1 id="expected-profit" class="rw-value">${formatPrice(products.reduce((s, p) => s + ((p.price - (p.cost_price || 0)) * p.stock), 0))}</h1>
           </div>
         </div>
         ` : ''}

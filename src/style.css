@@ -1564,6 +1564,52 @@ tbody tr:last-child td {
 }
 
 /* ========================================
+   Revenue Widgets (Products Page)
+   ======================================== */
+.revenue-widgets-container {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.revenue-widget-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  text-align: right;
+  flex: 1 1 auto;
+  min-width: 160px;
+}
+
+.revenue-widget-card.success {
+  border-color: var(--accent-success);
+}
+
+.rw-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.rw-value {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+}
+
+.revenue-widget-card.success .rw-value {
+  color: var(--accent-success);
+}
+
+/* ========================================
    Responsive Breakpoints
    ======================================== */
 @media (max-width: 1024px) {
@@ -1627,6 +1673,28 @@ tbody tr:last-child td {
 
   .page-title {
     font-size: 1.5rem;
+  }
+
+  .revenue-widgets-container {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .revenue-widget-card {
+    text-align: center;
+    padding: 10px;
+    min-width: 130px;
+    flex: 1;
+  }
+
+  .rw-value {
+    font-size: 1.15rem;
+  }
+
+  .rw-label {
+    font-size: 0.65rem;
+    white-space: normal;
   }
 
   .stats-grid {
