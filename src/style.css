@@ -1687,6 +1687,31 @@ tbody tr:last-child td {
   }
 
   /* Sell Page Optimizations */
+  .sell-layout {
+    display: flex !important;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .barcode-section {
+    display: contents;
+  }
+
+  .barcode-section>.card:first-child {
+    order: 1;
+    margin-bottom: 0 !important;
+  }
+
+  .cart-panel {
+    order: 2;
+    margin-top: 5px !important;
+  }
+
+  .recent-products {
+    order: 3;
+    margin-top: 10px;
+  }
+
   .barcode-input-wrapper .input-large {
     font-size: 1.1rem;
     padding: var(--space-md);
