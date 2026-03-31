@@ -1692,8 +1692,38 @@ tbody tr:last-child td {
     padding: var(--space-md);
   }
 
+  .recent-products {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: var(--space-lg);
+  }
+
+  .product-quick-card {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .product-quick-card .pq-name {
+    flex: 1 1 100%;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+  }
+
+  .product-quick-card .pq-price,
+  .product-quick-card .pq-stock,
+  .product-quick-card .pq-code {
+    flex: 1;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 4px 6px;
+    border-radius: 6px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
   .cart-panel {
-    margin-top: var(--space-xl);
+    margin-top: 10px;
   }
 
   .modal-content {
