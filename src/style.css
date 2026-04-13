@@ -2230,3 +2230,47 @@ tbody tr:last-child td {
   background: var(--accent-danger);
   color: white;
 }
+
+/* --- Discount Feature --- */
+.cart-discount-section {
+  background: var(--bg-primary);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--border-color);
+}
+
+#discount-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+#discount-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-glow);
+}
+
+.net-total-row .cart-total-value {
+  font-size: 1.4rem;
+  letter-spacing: -0.5px;
+}
+
+/* Receipt Styles */
+.receipt-total-section {
+  margin-top: 15px;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 10px;
+}
+
+.receipt-total-section div {
+  margin-bottom: 4px;
+}
+
+.receipt-total {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}

@@ -140,6 +140,13 @@ function loadMonthlyData(monthStr) {
           <div class="stat-value">${formatPrice(Math.round(summary.avgDaily))}</div>
         </div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">📉</div>
+        <div class="stat-info">
+          <h3>Jami chegirma</h3>
+          <div class="stat-value">${formatPrice(summary.totalDiscount)}</div>
+        </div>
+      </div>
     `;
   }
 

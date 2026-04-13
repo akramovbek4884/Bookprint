@@ -123,6 +123,13 @@ function loadDailyData(dateStr) {
           <div class="stat-value">${summary.salesCount > 0 ? formatPrice(Math.round(summary.totalRevenue / summary.salesCount)) : '0 so\'m'}</div>
         </div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">📉</div>
+        <div class="stat-info">
+          <h3>Jami chegirma</h3>
+          <div class="stat-value">${formatPrice(summary.totalDiscount)}</div>
+        </div>
+      </div>
     `;
   }
 

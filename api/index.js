@@ -38,6 +38,7 @@ async function initDb() {
             id SERIAL PRIMARY KEY,
             receiptNo TEXT UNIQUE NOT NULL,
             total INTEGER NOT NULL,
+            discount INTEGER DEFAULT 0,
             date TEXT NOT NULL,
             user_id INTEGER REFERENCES users(id)
         )`);
@@ -73,6 +74,13 @@ async function initDb() {
             await db.query(`ALTER TABLE sale_items ADD CONSTRAINT sale_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL`);
         } catch (e) {
             console.error("Constraint migration error:", e.message);
+        }
+
+        // Add discount column to sales if missing
+        try {
+            await db.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount INTEGER DEFAULT 0`);
+        } catch (e) {
+            console.error("Discount column migration error:", e.message);
         }
 
         // Fix foreign key constraint for user deletion
@@ -271,7 +279,7 @@ app.delete('/api/products/:id', authenticate, requireAdmin, async (req, res) => 
 });
 
 app.post('/api/sales', authenticate, async (req, res) => {
-    const { items } = req.body;
+    const { items, discount = 0 } = req.body;
     let receiptno = req.body.receiptno || req.body.receiptNo;
 
     if (!receiptno) {
@@ -331,9 +339,11 @@ app.post('/api/sales', authenticate, async (req, res) => {
             }
         }
 
+        const netTotal = Math.max(0, calculatedTotal - discount);
+
         const saleResult = await client.query(
-            'INSERT INTO sales (receiptno, total, date, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
-            [receiptno, calculatedTotal, date, user_id]
+            'INSERT INTO sales (receiptno, total, discount, date, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+            [receiptno, netTotal, discount, date, user_id]
         );
         const saleId = saleResult.rows[0].id;
 

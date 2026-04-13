@@ -6,6 +6,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { playScanSound } from './utils.js';
 
 let cart = [];
+let discount = 0;
 let html5QrcodeScanner = null;
 
 export function renderSell() {
@@ -71,6 +72,16 @@ export function renderSell() {
             <div class="cart-total-row">
               <span class="cart-total-label">Jami:</span>
               <span class="cart-total-value" id="cart-total">${formatPrice(getCartTotal())}</span>
+            </div>
+            <div class="cart-discount-section">
+                <div class="cart-total-row" style="font-size: 0.9rem; margin-bottom: 5px;">
+                    <span class="cart-total-label" style="color: var(--text-secondary);">Chegirma:</span>
+                    <input type="number" id="discount-input" class="input" value="${discount}" min="0" step="500" style="width: 100px; padding: 4px 8px; text-align: right;" />
+                </div>
+                <div class="cart-total-row net-total-row" style="border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 5px;">
+                    <span class="cart-total-label" style="font-weight: bold; color: var(--accent-success);">To'lanishi:</span>
+                    <span class="cart-total-value" id="net-total" style="font-weight: bold; color: var(--accent-success);">${formatPrice(getCartNetTotal())}</span>
+                </div>
             </div>
             <button class="btn btn-success btn-lg pay-btn" id="pay-btn" ${cart.length === 0 ? 'disabled' : ''}>
               💳 To'lov qilish
@@ -142,6 +153,10 @@ function getCartTotal() {
   return cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 }
 
+function getCartNetTotal() {
+  return Math.max(0, getCartTotal() - discount);
+}
+
 function updateCartUI() {
   const wrapper = document.getElementById('cart-items-wrapper');
   const totalEl = document.getElementById('cart-total');
@@ -150,6 +165,13 @@ function updateCartUI() {
 
   if (wrapper) wrapper.innerHTML = renderCartItems();
   if (totalEl) totalEl.textContent = formatPrice(getCartTotal());
+  
+  const netTotalEl = document.getElementById('net-total');
+  if (netTotalEl) netTotalEl.textContent = formatPrice(getCartNetTotal());
+
+  const discInput = document.getElementById('discount-input');
+  if (discInput) discInput.value = discount;
+
   if (payBtn) payBtn.disabled = cart.length === 0;
   if (clearBtn) clearBtn.disabled = cart.length === 0;
 
@@ -417,6 +439,7 @@ export function initSell() {
           subtotal: item.price * item.qty,
         })),
         total: getCartTotal(),
+        discount: discount,
       };
 
       const result = await saveSale(sale);
@@ -427,6 +450,7 @@ export function initSell() {
       if (result.success) {
         showReceipt(result.sale);
         cart = [];
+        discount = 0;
         updateCartUI();
 
         // Refresh local product list UI from the now-synced store
@@ -475,9 +499,19 @@ export function initSell() {
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       cart = [];
+      discount = 0;
       updateCartUI();
     });
   }
+
+  // Discount input listener
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'discount-input') {
+      discount = parseInt(e.target.value) || 0;
+      if (discount < 0) discount = 0;
+      updateCartUI();
+    }
+  });
 
   attachCartEventListeners();
   attachQuickCardListeners();
@@ -533,8 +567,21 @@ export function showReceipt(sale) {
         `).join('')}
       </tbody>
     </table>
-    <div class="receipt-total">
-      JAMI: ${new Intl.NumberFormat('uz-UZ').format(sale.total)} so'm
+    <div class="receipt-total-section" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+      <div style="display:flex; justify-content:space-between; font-size: 0.9rem; color: #666;">
+        <span>Jami summa:</span>
+        <span>${new Intl.NumberFormat('uz-UZ').format(sale.items.reduce((s,i) => s + i.subtotal, 0))} so'm</span>
+      </div>
+      ${sale.discount > 0 ? `
+      <div style="display:flex; justify-content:space-between; font-size: 0.9rem; color: #666; margin-bottom: 5px;">
+        <span>Chegirma:</span>
+        <span>${new Intl.NumberFormat('uz-UZ').format(sale.discount)} so'm</span>
+      </div>
+      ` : ''}
+      <div class="receipt-total" style="font-weight: bold; font-size: 1.2rem; margin-top: 5px; display:flex; justify-content:space-between;">
+        <span>TO'LANDI:</span>
+        <span>${new Intl.NumberFormat('uz-UZ').format(sale.total)} so'm</span>
+      </div>
     </div>
     <div class="receipt-footer">
       <p>Xaridingiz uchun rahmat! 🙏</p>

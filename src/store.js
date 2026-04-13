@@ -221,6 +221,7 @@ export async function saveSale(sale) {
             ...sale,
             id: result.saleId,
             total: result.calculatedTotal !== undefined ? result.calculatedTotal : sale.total,
+            discount: sale.discount || 0,
             items: result.items || sale.items,
             timestamp: new Date().toISOString()
         };
@@ -342,6 +343,7 @@ export function getMonthlySummary(monthStr) {
 
 function buildSummary(sales) {
     const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+    const totalDiscount = sales.reduce((sum, s) => sum + (parseInt(s.discount) || 0), 0);
     const totalItems = sales.reduce((sum, s) => sum + (s.items ? s.items.reduce((is, i) => is + i.qty, 0) : 0), 0);
 
     const hourly = {};
@@ -373,7 +375,7 @@ function buildSummary(sales) {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 10);
 
-    return { sales, totalRevenue, totalItems, salesCount: sales.length, hourly, topProducts };
+    return { sales, totalRevenue, totalDiscount, totalItems, salesCount: sales.length, hourly, topProducts };
 }
 
 export function generateReceiptNo() {
