@@ -188,6 +188,11 @@ app.post('/api/users', authenticate, requireAdmin, async (req, res) => {
 app.delete('/api/users/:id', authenticate, requireAdmin, async (req, res) => {
     const { id } = req.params;
 
+    // Prevent deleting main admin accounts (id 1 and 21)
+    if (parseInt(id) === 1 || parseInt(id) === 21) {
+        return res.status(400).json({ error: "Asosiy admin foydalanuvchilarini o'chirib bo'lmaydi!" });
+    }
+
     // Prevent deleting yourself
     if (parseInt(id) === req.user.id) {
         return res.status(400).json({ error: "O'zingizni o'chira olmaysiz" });
