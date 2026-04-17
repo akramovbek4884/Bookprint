@@ -65,9 +65,6 @@ export function renderSell() {
 
         <div class="cart-panel card">
           <h3 style="margin-bottom: var(--space-sm); font-size: 1rem;">🧾 Savatcha</h3>
-          <div class="cart-items-wrapper" id="cart-items-wrapper">
-            ${renderCartItems()}
-          </div>
           <div class="cart-total-section">
             <div class="cart-total-row">
               <span class="cart-total-label">Jami:</span>
@@ -89,6 +86,9 @@ export function renderSell() {
             <button class="btn btn-secondary btn-lg" id="clear-cart-btn" style="width:100%; margin-top: var(--space-sm);" ${cart.length === 0 ? 'disabled' : ''}>
               🗑️ Savatchani tozalash
             </button>
+          </div>
+          <div class="cart-items-wrapper" id="cart-items-wrapper">
+            ${renderCartItems()}
           </div>
         </div>
       </div>
@@ -211,7 +211,16 @@ function showMultiProductModal(products) {
   document.getElementById('close-multi-modal').onclick = () => modal.classList.add('hidden');
 }
 
+let lastSelection = { id: null, time: 0 };
+
 function handleProductSelection(product) {
+  const now = Date.now();
+  if (lastSelection.id === product.id && (now - lastSelection.time) < 200) {
+    console.log("Ignored duplicate selection for product:", product.id);
+    return;
+  }
+  lastSelection = { id: product.id, time: now };
+
   const feedback = document.getElementById('barcode-feedback');
   const inCart = cart.find(item => item.id === product.id);
   const currentQtyInCart = inCart ? inCart.qty : 0;
@@ -397,16 +406,6 @@ export function initSell() {
     });
   }
 
-  // Product quick cards
-  document.querySelectorAll('.product-quick-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = parseInt(card.dataset.id);
-      const product = getProducts().find(p => p.id === id);
-      if (product) {
-        handleProductSelection(product);
-      }
-    });
-  });
 
   // Pay button
   const payBtn = document.getElementById('pay-btn');
@@ -461,33 +460,6 @@ export function initSell() {
     });
   }
 
-  function refreshProductListUI() {
-    const productList = document.getElementById('product-list');
-    if (!productList) return; // Prevent memory leak cross-page execution
-
-    const searchInput = document.getElementById('product-search-input');
-    const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
-    if (productList) {
-      const updatedProducts = getProducts();
-      const filtered = term ? updatedProducts.filter(p => p.name.toLowerCase().includes(term) || p.barcode.includes(term)) : updatedProducts;
-
-      productList.innerHTML = filtered.map(p => {
-        const isLow = p.stock < 10;
-        const isOut = p.stock <= 0;
-        return `
-          <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-id="${p.id}">
-            <div class="pq-name">${p.name}</div>
-            <div class="pq-price">${formatPrice(p.price)}</div>
-            <div class="pq-stock ${isLow ? 'low' : ''}">${p.stock} ta</div>
-            <div class="pq-code">${p.barcode}</div>
-          </div>
-        `;
-      }).join('');
-      attachQuickCardListeners();
-    }
-  }
-
   // Product Search Listener
   const productSearchInput = document.getElementById('product-search-input');
   if (productSearchInput) {
@@ -517,7 +489,35 @@ export function initSell() {
   attachQuickCardListeners();
 
   // Surgical refresh: update only the product list when store data changes
+  window.removeEventListener('store-updated', refreshProductListUI);
   window.addEventListener('store-updated', refreshProductListUI);
+}
+
+function refreshProductListUI() {
+  const productList = document.getElementById('product-list');
+  if (!productList) return; // Prevent memory leak cross-page execution
+
+  const searchInput = document.getElementById('product-search-input');
+  const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  if (productList) {
+    const updatedProducts = getProducts();
+    const filtered = term ? updatedProducts.filter(p => p.name.toLowerCase().includes(term) || p.barcode.includes(term)) : updatedProducts;
+
+    productList.innerHTML = filtered.map(p => {
+      const isLow = p.stock < 10;
+      const isOut = p.stock <= 0;
+      return `
+        <div class="product-quick-card ${isOut ? 'out-of-stock' : ''}" data-id="${p.id}">
+          <div class="pq-name">${p.name}</div>
+          <div class="pq-price">${formatPrice(p.price)}</div>
+          <div class="pq-stock ${isLow ? 'low' : ''}">${p.stock} ta</div>
+          <div class="pq-code">${p.barcode}</div>
+        </div>
+      `;
+    }).join('');
+    attachQuickCardListeners();
+  }
 }
 
 function attachQuickCardListeners() {
